@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>ccfox Fixture</title>
+<style>
+  body { font-family: sans-serif; margin: 20px; }
+  #scroller { height: 80px; overflow: auto; border: 1px solid #ccc; }
+  #scroller div { height: 400px; }
+  .fake-btn { cursor: pointer; display: inline-block; padding: 4px; background: #eee; }
+  #spacer { height: 2000px; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Fixture Page</h1>
+    <button id="counter" onclick="this.dataset.n = (+this.dataset.n || 0) + 1; this.textContent = 'Clicked ' + this.dataset.n; console.log('counter clicked', this.dataset.n)">Click me</button>
+    <div class="fake-btn" id="fake">Div button</div>
+    <form id="f">
+      <label for="name">Your name</label>
+      <input id="name" name="name" placeholder="Type here">
+      <input id="email" type="email" aria-label="Email">
+      <select id="color"><option value="r">Red</option><option value="g">Green</option><option value="b">Blue</option></select>
+      <label><input type="checkbox" id="agree"> I agree</label>
+      <textarea id="notes" aria-label="Notes"></textarea>
+      <div contenteditable="true" id="rich" aria-label="Rich editor"></div>
+      <button type="submit">Send</button>
+    </form>
+    <p id="mirror">mirror:</p>
+    <p id="submitted">not submitted</p>
+    <p id="keys">keys:</p>
+    <a href="#section2" id="link">Jump to section</a>
+    <div id="scroller"><div>Scrollable content</div></div>
+    <div id="spacer"></div>
+    <h2 id="section2">Section two</h2>
+  </main>
+<script>
+  document.getElementById('name').addEventListener('input', (e) => { document.getElementById('mirror').textContent = 'mirror:' + e.target.value; });
+  document.getElementById('f').addEventListener('submit', (e) => { e.preventDefault(); document.getElementById('submitted').textContent = 'submitted ' + new FormData(e.target).get('name'); });
+  document.getElementById('fake').addEventListener('click', () => { document.getElementById('fake').textContent = 'Div clicked'; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.getElementById('keys').textContent += ' Escape'; });
+  console.warn('fixture loaded');
+  console.error('fixture error', { code: 42 });
+  fetch('/api/missing').catch(() => {});
+  window.pageGlobal = 'hello from page';
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ccfox banner</title>
+<!-- Source for docs/banner.png (1280x640, also the GitHub social preview). Render with:
+     zen --headless -no-remote -profile <tmp> --screenshot docs/banner.png --window-size=1280,640 file://.../docs/banner.html -->
+<style>
+  :root {
+    --bg: #161412;
+    --ink: #f3efe6;
+    --ink-2: #a8a296;
+    --ink-3: #8b8579;
+    --fox: #E8682A;
+    --fox-deep: #c2501b;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --px: 20px; /* one fox pixel */
+  }
+  html, body { margin: 0; }
+  body {
+    width: 1280px; height: 640px; overflow: hidden; position: relative;
+    background-color: var(--bg);
+    /* faint dot grid on the fox's own pixel pitch, aligned to its pixel corners */
+    background-image: radial-gradient(circle at 0 0, rgb(243 239 230 / 0.09) 1.2px, transparent 1.6px);
+    background-size: var(--px) var(--px);
+    background-position: 0 10px;
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  svg.fox {
+    position: absolute; left: 140px; top: 190px;
+    width: calc(19 * var(--px)); height: calc(13 * var(--px));
+    shape-rendering: crispEdges; image-rendering: pixelated;
+  }
+  .copy {
+    position: absolute; left: 600px; right: 40px; top: 0; bottom: 12px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .word {
+    font: 700 136px/0.9 var(--mono);
+    letter-spacing: -0.045em;
+    margin: 0 0 34px -7px;
+  }
+  .word .fx { color: var(--fox); }
+  .tag {
+    font: 500 31px/1.28 var(--sans);
+    letter-spacing: -0.012em;
+    margin: 0;
+  }
+  .tag span { display: block; color: var(--ink-2); }
+  .meta {
+    display: flex; gap: 12px; align-items: center;
+    margin-top: 38px;
+    font: 500 19px/1 var(--mono);
+    color: var(--ink-3);
+  }
+  .meta i { width: 7px; height: 7px; background: var(--fox-deep); display: inline-block; }
+  /* one row of fox pixels along the bottom edge */
+  .strip {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 10px;
+    background: repeating-linear-gradient(90deg, var(--fox) 0 var(--px), var(--fox-deep) var(--px) calc(2 * var(--px)));
+  }
+</style>
+</head>
+<body>
+      <svg class="fox" viewBox="1 4 19 13" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ccfox pixel fox"><rect x="2" y="4" width="1" height="1" fill="#E8682A"/><rect x="14" y="4" width="1" height="1" fill="#E8682A"/><rect x="2" y="5" width="1" height="1" fill="#E8682A"/><rect x="3" y="5" width="1" height="1" fill="#E8682A"/><rect x="13" y="5" width="1" height="1" fill="#E8682A"/><rect x="14" y="5" width="1" height="1" fill="#E8682A"/><rect x="2" y="6" width="1" height="1" fill="#E8682A"/><rect x="3" y="6" width="1" height="1" fill="#8A3412"/><rect x="4" y="6" width="1" height="1" fill="#E8682A"/><rect x="12" y="6" width="1" height="1" fill="#E8682A"/><rect x="13" y="6" width="1" height="1" fill="#8A3412"/><rect x="14" y="6" width="1" height="1" fill="#E8682A"/><rect x="2" y="7" width="1" height="1" fill="#E8682A"/><rect x="3" y="7" width="1" height="1" fill="#8A3412"/><rect x="4" y="7" width="1" height="1" fill="#E8682A"/><rect x="5" y="7" width="1" height="1" fill="#E8682A"/><rect x="11" y="7" width="1" height="1" fill="#E8682A"/><rect x="12" y="7" width="1" height="1" fill="#E8682A"/><rect x="13" y="7" width="1" height="1" fill="#8A3412"/><rect x="14" y="7" width="1" height="1" fill="#E8682A"/><rect x="17" y="7" width="1" height="1" fill="#FFF1E2"/><rect x="18" y="7" width="1" height="1" fill="#FFF1E2"/><rect x="2" y="8" width="1" height="1" fill="#E8682A"/><rect x="3" y="8" width="1" height="1" fill="#E8682A"/><rect x="4" y="8" width="1" height="1" fill="#E8682A"/><rect x="5" y="8" width="1" height="1" fill="#E8682A"/><rect x="6" y="8" width="1" height="1" fill="#E8682A"/><rect x="7" y="8" width="1" height="1" fill="#E8682A"/><rect x="8" y="8" width="1" height="1" fill="#E8682A"/><rect x="9" y="8" width="1" height="1" fill="#E8682A"/><rect x="10" y="8" width="1" height="1" fill="#E8682A"/><rect x="11" y="8" width="1" height="1" fill="#E8682A"/><rect x="12" y="8" width="1" height="1" fill="#E8682A"/><rect x="13" y="8" width="1" height="1" fill="#E8682A"/><rect x="14" y="8" width="1" height="1" fill="#E8682A"/><rect x="16" y="8" width="1" height="1" fill="#E8682A"/><rect x="17" y="8" width="1" height="1" fill="#E8682A"/><rect x="18" y="8" width="1" height="1" fill="#FFF1E2"/><rect x="1" y="9" width="1" height="1" fill="#E8682A"/><rect x="2" y="9" width="1" height="1" fill="#E8682A"/><rect x="3" y="9" width="1" height="1" fill="#E8682A"/><rect x="4" y="9" width="1" height="1" fill="#E8682A"/><rect x="5" y="9" width="1" height="1" fill="#E8682A"/><rect x="6" y="9" width="1" height="1" fill="#E8682A"/><rect x="7" y="9" width="1" height="1" fill="#E8682A"/><rect x="8" y="9" width="1" height="1" fill="#E8682A"/><rect x="9" y="9" width="1" height="1" fill="#E8682A"/><rect x="10" y="9" width="1" height="1" fill="#E8682A"/><rect x="11" y="9" width="1" height="1" fill="#E8682A"/><rect x="12" y="9" width="1" height="1" fill="#E8682A"/><rect x="13" y="9" width="1" height="1" fill="#E8682A"/><rect x="14" y="9" width="1" height="1" fill="#E8682A"/><rect x="15" y="9" width="1" height="1" fill="#E8682A"/><rect x="16" y="9" width="1" height="1" fill="#E8682A"/><rect x="17" y="9" width="1" height="1" fill="#E8682A"/><rect x="1" y="10" width="1" height="1" fill="#E8682A"/><rect x="2" y="10" width="1" height="1" fill="#E8682A"/><rect x="3" y="10" width="1" height="1" fill="#E8682A"/><rect x="4" y="10" width="1" height="1" fill="#1F1410"/><rect x="5" y="10" width="1" height="1" fill="#E8682A"/><rect x="6" y="10" width="1" height="1" fill="#E8682A"/><rect x="7" y="10" width="1" height="1" fill="#E8682A"/><rect x="8" y="10" width="1" height="1" fill="#E8682A"/><rect x="9" y="10" width="1" height="1" fill="#E8682A"/><rect x="10" y="10" width="1" height="1" fill="#E8682A"/><rect x="11" y="10" width="1" height="1" fill="#E8682A"/><rect x="12" y="10" width="1" height="1" fill="#1F1410"/><rect x="13" y="10" width="1" height="1" fill="#E8682A"/><rect x="14" y="10" width="1" height="1" fill="#E8682A"/><rect x="15" y="10" width="1" height="1" fill="#E8682A"/><rect x="16" y="10" width="1" height="1" fill="#E8682A"/><rect x="17" y="10" width="1" height="1" fill="#E8682A"/><rect x="1" y="11" width="1" height="1" fill="#E8682A"/><rect x="2" y="11" width="1" height="1" fill="#E8682A"/><rect x="3" y="11" width="1" height="1" fill="#E8682A"/><rect x="4" y="11" width="1" height="1" fill="#1F1410"/><rect x="5" y="11" width="1" height="1" fill="#E8682A"/><rect x="6" y="11" width="1" height="1" fill="#E8682A"/><rect x="7" y="11" width="1" height="1" fill="#E8682A"/><rect x="8" y="11" width="1" height="1" fill="#E8682A"/><rect x="9" y="11" width="1" height="1" fill="#E8682A"/><rect x="10" y="11" width="1" height="1" fill="#E8682A"/><rect x="11" y="11" width="1" height="1" fill="#E8682A"/><rect x="12" y="11" width="1" height="1" fill="#1F1410"/><rect x="13" y="11" width="1" height="1" fill="#E8682A"/><rect x="14" y="11" width="1" height="1" fill="#E8682A"/><rect x="15" y="11" width="1" height="1" fill="#E8682A"/><rect x="16" y="11" width="1" height="1" fill="#E8682A"/><rect x="1" y="12" width="1" height="1" fill="#E8682A"/><rect x="2" y="12" width="1" height="1" fill="#E8682A"/><rect x="3" y="12" width="1" height="1" fill="#E8682A"/><rect x="4" y="12" width="1" height="1" fill="#FFF1E2"/><rect x="5" y="12" width="1" height="1" fill="#FFF1E2"/><rect x="6" y="12" width="1" height="1" fill="#FFF1E2"/><rect x="7" y="12" width="1" height="1" fill="#E8682A"/><rect x="8" y="12" width="1" height="1" fill="#1F1410"/><rect x="9" y="12" width="1" height="1" fill="#E8682A"/><rect x="10" y="12" width="1" height="1" fill="#FFF1E2"/><rect x="11" y="12" width="1" height="1" fill="#FFF1E2"/><rect x="12" y="12" width="1" height="1" fill="#FFF1E2"/><rect x="13" y="12" width="1" height="1" fill="#E8682A"/><rect x="14" y="12" width="1" height="1" fill="#E8682A"/><rect x="15" y="12" width="1" height="1" fill="#E8682A"/><rect x="1" y="13" width="1" height="1" fill="#E8682A"/><rect x="2" y="13" width="1" height="1" fill="#E8682A"/><rect x="3" y="13" width="1" height="1" fill="#E8682A"/><rect x="4" y="13" width="1" height="1" fill="#E8682A"/><rect x="5" y="13" width="1" height="1" fill="#FFF1E2"/><rect x="6" y="13" width="1" height="1" fill="#FFF1E2"/><rect x="7" y="13" width="1" height="1" fill="#FFF1E2"/><rect x="8" y="13" width="1" height="1" fill="#FFF1E2"/><rect x="9" y="13" width="1" height="1" fill="#FFF1E2"/><rect x="10" y="13" width="1" height="1" fill="#FFF1E2"/><rect x="11" y="13" width="1" height="1" fill="#FFF1E2"/><rect x="12" y="13" width="1" height="1" fill="#E8682A"/><rect x="13" y="13" width="1" height="1" fill="#E8682A"/><rect x="14" y="13" width="1" height="1" fill="#E8682A"/><rect x="15" y="13" width="1" height="1" fill="#E8682A"/><rect x="2" y="14" width="1" height="1" fill="#E8682A"/><rect x="3" y="14" width="1" height="1" fill="#E8682A"/><rect x="4" y="14" width="1" height="1" fill="#E8682A"/><rect x="5" y="14" width="1" height="1" fill="#E8682A"/><rect x="6" y="14" width="1" height="1" fill="#FFF1E2"/><rect x="7" y="14" width="1" height="1" fill="#FFF1E2"/><rect x="8" y="14" width="1" height="1" fill="#FFF1E2"/><rect x="9" y="14" width="1" height="1" fill="#FFF1E2"/><rect x="10" y="14" width="1" height="1" fill="#FFF1E2"/><rect x="11" y="14" width="1" height="1" fill="#E8682A"/><rect x="12" y="14" width="1" height="1" fill="#E8682A"/><rect x="13" y="14" width="1" height="1" fill="#E8682A"/><rect x="14" y="14" width="1" height="1" fill="#E8682A"/><rect x="2" y="15" width="1" height="1" fill="#E8682A"/><rect x="3" y="15" width="1" height="1" fill="#E8682A"/><rect x="5" y="15" width="1" height="1" fill="#E8682A"/><rect x="6" y="15" width="1" height="1" fill="#E8682A"/><rect x="10" y="15" width="1" height="1" fill="#E8682A"/><rect x="11" y="15" width="1" height="1" fill="#E8682A"/><rect x="13" y="15" width="1" height="1" fill="#E8682A"/><rect x="14" y="15" width="1" height="1" fill="#E8682A"/><rect x="2" y="16" width="1" height="1" fill="#E8682A"/><rect x="3" y="16" width="1" height="1" fill="#E8682A"/><rect x="5" y="16" width="1" height="1" fill="#E8682A"/><rect x="6" y="16" width="1" height="1" fill="#E8682A"/><rect x="10" y="16" width="1" height="1" fill="#E8682A"/><rect x="11" y="16" width="1" height="1" fill="#E8682A"/><rect x="13" y="16" width="1" height="1" fill="#E8682A"/><rect x="14" y="16" width="1" height="1" fill="#E8682A"/></svg>
+    <div class="copy">
+      <div class="word"><span class="cc">cc</span><span class="fx">fox</span></div>
+      <p class="tag">Claude in your Zen &amp; Firefox side panel.<span>Your real browser, your Claude Code.</span></p>
+      <div class="meta">open source <i></i> MIT <i></i> unofficial</div>
+    </div>
+  <div class="strip"></div>
+</body>
+</html>

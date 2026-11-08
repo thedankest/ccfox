@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ccfox</title>
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="toolbar">
+      <button class="chat-switch" id="btnHistory" aria-haspopup="dialog" title="Chats (Alt+H)">
+        <span class="chat-title" id="chatTitle">New chat</span>
+        <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg>
+      </button>
+      <div class="toolbar-actions">
+        <button class="icon-btn" id="btnNew" aria-label="New chat" title="New chat (Alt+N)">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11"/></svg>
+        </button>
+        <button class="icon-btn" id="btnSettings" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.4"/><path d="M10 2.8v2M10 15.2v2M2.8 10h2M15.2 10h2M4.9 4.9l1.4 1.4M13.7 13.7l1.4 1.4M4.9 15.1l1.4-1.4M13.7 6.3l1.4-1.4"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="banner" id="banner" role="alert" hidden>
+      <p class="banner-text"><strong id="bannerTitle"></strong> <span id="bannerText"></span></p>
+      <div class="banner-actions">
+        <button class="btn small" id="btnReconnect">Reconnect</button>
+        <button class="btn small ghost" id="btnCopySetup">Copy setup command</button>
+      </div>
+    </div>
+
+    <main class="scroller" id="scroller">
+      <div class="column">
+        <section class="empty" id="empty">
+          <h1 id="emptyTitle">What should Claude do here?</h1>
+          <p class="empty-sub">Claude can read this page and click, type and fill in forms on it. It asks before acting on a site.</p>
+          <div class="suggestions" id="suggestions">
+            <button class="suggestion" data-prompt="Summarize this page.">Summarize this page</button>
+            <button class="suggestion" data-prompt="What can I do on this page? List the main actions and where they are.">What can I do here?</button>
+            <button class="suggestion" data-prompt="Check this page for problems: console errors, failed network requests and obvious layout issues.">Check this page for problems</button>
+          </div>
+          <p class="empty-hint" id="emptyHint">Type <kbd>/</kbd> for your skills, plugins and agents.</p>
+        </section>
+        <ol class="transcript" id="messages"></ol>
+        <div class="thinking" id="thinking" hidden><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Thinking</span></div>
+      </div>
+    </main>
+
+    <div class="dock" id="dock" hidden></div>
+
+    <footer class="composer" id="composer">
+      <div class="column">
+        <div class="target" id="target">
+          <button class="target-tab" id="targetTab" title="The tab Claude works in">
+            <span class="favicon" id="targetIcon" aria-hidden="true"></span>
+            <span class="target-text"><span class="target-label" id="targetLabel" hidden></span> <span class="target-title" id="targetTitle">No tab</span></span>
+          </button>
+          <label class="trust" id="trustWrap" title="What Claude may do on this site">
+            <span class="visually-hidden">Permission on this site</span>
+            <select id="trust">
+              <option value="ask">Asks first</option>
+              <option value="site">Always allowed</option>
+              <option value="auto">Acts without asking</option>
+            </select>
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg>
+          </label>
+        </div>
+        <div class="box" id="box">
+          <div class="picker" id="picker" hidden>
+            <div class="picker-head"><span id="pickerTitle">Skills and commands</span><span class="picker-keys">↑↓ to choose · Enter to insert</span></div>
+            <div class="picker-list" id="pickerList" role="listbox" aria-label="Skills, commands and agents"></div>
+          </div>
+          <div class="popover attach-menu" id="attachMenu" role="menu" aria-label="Add to your message" hidden>
+            <button class="menu-item" role="menuitem" id="miUpload" tabindex="-1">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 9.5 9 14a3 3 0 0 1-4.2-4.2l5.3-5.3a2 2 0 0 1 2.8 2.8l-5.2 5.2a1 1 0 0 1-1.4-1.4L11 6.4"/></svg>
+              <span class="mi-text"><span>Upload files</span><span class="mi-sub">Images, PDFs, text, anything</span></span>
+            </button>
+            <button class="menu-item" role="menuitem" id="miShot" tabindex="-1">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2M13 3.5h2A1.5 1.5 0 0 1 16.5 5v2M16.5 13v2a1.5 1.5 0 0 1-1.5 1.5h-2M7 16.5H5A1.5 1.5 0 0 1 3.5 15v-2"/><circle cx="10" cy="10" r="2.3"/></svg>
+              <span class="mi-text"><span>Screenshot of this tab</span><span class="mi-sub" id="miShotSub">What you see right now</span></span>
+            </button>
+            <button class="menu-item" role="menuitem" id="miTabs" tabindex="-1" aria-haspopup="dialog">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="6.5" width="10" height="9" rx="1.5"/><path d="M6.5 4h8.5A1.5 1.5 0 0 1 16.5 5.5V13"/></svg>
+              <span class="mi-text"><span>Add tabs as context</span><span class="mi-sub">Claude can read the tabs you pick</span></span>
+            </button>
+          </div>
+          <div class="popover tab-pick" id="tabPick" role="dialog" aria-labelledby="tabPickTitle" hidden>
+            <div class="picker-head"><span id="tabPickTitle">Add tabs as context</span><span class="picker-keys" id="tabPickCount"></span></div>
+            <p class="tab-pick-note" id="tabPickNote">Claude already sees the tab you're on. Pick others it may read.</p>
+            <ul class="tab-list" id="tabList"></ul>
+            <div class="tab-pick-foot"><button class="btn small primary" id="tabPickDone">Done</button></div>
+          </div>
+          <ul class="att-list" id="attachList" aria-label="Attached to your next message" hidden></ul>
+          <textarea id="input" rows="1" placeholder="Ask Claude to do something on this page" aria-label="Message Claude" aria-autocomplete="list" aria-controls="pickerList"></textarea>
+          <input type="file" id="fileInput" multiple hidden tabindex="-1" aria-hidden="true">
+          <div class="box-row">
+            <button class="tool-btn" id="btnAttach" aria-label="Add files, a screenshot or tabs" aria-haspopup="menu" aria-expanded="false" aria-controls="attachMenu" title="Add files, a screenshot or tabs">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11"/></svg>
+            </button>
+            <button class="tool-btn" id="btnSlash" aria-label="Skills, plugins and agents" title="Skills, plugins and agents (/)">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 7.5 16"/></svg>
+            </button>
+            <label class="model" title="Model">
+              <span class="visually-hidden">Model</span>
+              <select id="model"><option value="">Default model</option></select>
+              <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg>
+            </label>
+            <span class="queued" id="queued" hidden>1 queued</span>
+            <button class="send" id="btnSend" aria-label="Send" title="Send (Enter)">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9"/></svg>
+            </button>
+            <button class="send stop" id="btnStop" aria-label="Stop Claude" title="Stop (Esc)" hidden>
+              <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="6" width="8" height="8" rx="1.5"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </footer>
+    <div class="drop-hint" id="dropHint" hidden aria-hidden="true">
+      <div class="drop-card">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13.5V4M6 8l4-4 4 4M4 13.5v1A1.5 1.5 0 0 0 5.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-1"/></svg>
+        <span>Drop to attach</span>
+        <span class="drop-sub">Up to 10 files, 20 MB each</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="historySheet" role="dialog" aria-modal="true" aria-labelledby="historyTitle" hidden>
+    <div class="sheet-head">
+      <h2 id="historyTitle">Chats</h2>
+      <button class="icon-btn" data-close aria-label="Close chats">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/></svg>
+      </button>
+    </div>
+    <input class="search" id="historySearch" type="search" placeholder="Search chats" aria-label="Search chats">
+    <ul class="history" id="historyList"></ul>
+  </div>
+
+  <div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+    <div class="sheet-head">
+      <h2 id="settingsTitle">Settings</h2>
+      <button class="icon-btn" data-close aria-label="Close settings">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/></svg>
+      </button>
+    </div>
+    <fieldset class="group">
+      <legend>Acting on pages</legend>
+      <label class="choice"><input type="radio" name="mode" value="ask"><span><strong>Ask first</strong><span class="choice-sub">Reading is automatic. Clicking, typing and navigating need your OK, unless you've always allowed the site.</span></span></label>
+      <label class="choice warn"><input type="radio" name="mode" value="auto"><span><strong>Act without asking</strong><span class="choice-sub">Browser actions run straight away on every site. Claude still checks with you before buying, sending, deleting or anything it can't undo.</span></span></label>
+    </fieldset>
+    <section class="group">
+      <h3>Always allowed sites</h3>
+      <ul class="rows" id="siteList"></ul>
+    </section>
+    <section class="group">
+      <h3>Showing Claude's work</h3>
+      <label class="toggle"><input type="checkbox" id="optHighlight"><span>Highlight the tab Claude is working in</span></label>
+      <label class="toggle" id="optGroupWrap"><input type="checkbox" id="optGroup"><span>Put tabs Claude opens in a “Claude” tab group</span></label>
+    </section>
+    <section class="group">
+      <h3>Your Claude Code</h3>
+      <label class="field-row">
+        <span>Model</span>
+        <span class="model settings-model"><select id="settingsModel"><option value="">Default model</option></select><svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg></span>
+      </label>
+      <dl class="facts" id="facts"></dl>
+      <button class="btn small ghost" id="btnBrowseSkills">Browse skills, plugins and agents</button>
+    </section>
+    <section class="group">
+      <h3>Connectors</h3>
+      <div class="chips" id="connectors"></div>
+    </section>
+    <section class="group">
+      <h3>Plugins</h3>
+      <ul class="rows plugins" id="pluginList"></ul>
+    </section>
+    <section class="group">
+      <h3>Connection</h3>
+      <dl class="facts" id="connFacts"></dl>
+      <div class="row-actions">
+        <button class="btn small" id="btnReconnect2">Reconnect</button>
+        <button class="btn small ghost" id="btnCopySetup2">Copy setup command</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button class="toast-action" id="toastAction" hidden></button></div>
+  <div class="visually-hidden" id="announce" aria-live="polite"></div>
+  <div class="visually-hidden" id="announceUrgent" aria-live="assertive"></div>
+
+  <script src="markdown.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>

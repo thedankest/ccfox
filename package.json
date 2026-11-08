@@ -1,0 +1,45 @@
+{
+  "name": "ccfox",
+  "version": "0.5.0",
+  "main": "server/mcp-server.mjs",
+  "scripts": {
+    "install-host": "node scripts/install.mjs",
+    "uninstall-host": "node scripts/install.mjs --uninstall",
+    "build": "node scripts/install.mjs",
+    "lint:ext": "web-ext lint --source-dir extension",
+    "dev": "web-ext run --source-dir extension --firefox /Applications/Zen.app/Contents/MacOS/zen --start-url about:debugging#/runtime/this-firefox",
+    "test": "node test/e2e.mjs",
+    "test:panel": "node test/panel-e2e.mjs"
+  },
+  "license": "MIT",
+  "description": "Claude in your Zen or Firefox side panel, and browser control for Claude Code, in your real browser profile",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.319",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "web-ext": "^10.8.0"
+  },
+  "type": "module",
+  "private": true,
+  "author": "thedankest",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thedankest/ccfox.git"
+  },
+  "homepage": "https://github.com/thedankest/ccfox#readme",
+  "bugs": {
+    "url": "https://github.com/thedankest/ccfox/issues"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "firefox",
+    "zen-browser",
+    "webextension",
+    "mcp",
+    "browser-automation",
+    "agent-sdk"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "test/fixture.html"
+        ],
+        "createdAt": "2026-11-08T18:57:19.879Z",
+        "reason": "Claude: test/fixture.html is an unstyled e2e test fixture for DOM automation, not a user-facing page"
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "test/fixture.html"
+        ],
+        "createdAt": "2026-11-08T18:57:19.903Z",
+        "reason": "Claude: test/fixture.html is an unstyled e2e test fixture for DOM automation, not a user-facing page"
+      },
+      {
+        "rule": "pulsing-dot",
+        "value": "*",
+        "files": [
+          "extension/sidebar/panel.html"
+        ],
+        "createdAt": "2026-11-08T19:19:30.740Z",
+        "reason": "Claude: the dots are the 'Working' indicator, shown only while a claude process is actively running a turn"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "extension/sidebar/panel.css"
+        ],
+        "createdAt": "2026-11-08T19:19:30.765Z",
+        "reason": "Claude: flagged rule is the neutral-gray left rule on Markdown blockquotes in Claude's replies, not an accent card"
+      },
+      {
+        "rule": "nested-cards",
+        "value": "*",
+        "files": [
+          "extension/sidebar/panel.html"
+        ],
+        "createdAt": "2026-11-08T20:05:34.608Z",
+        "reason": "Claude: the flagged div is the slash-command picker, an absolutely positioned popover that renders above the composer box, not a card nested inside it"
+      }
+    ]
+  }
+}
