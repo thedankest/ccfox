@@ -20,6 +20,8 @@ const ICON = {
   copy: svg('<rect x="5.5" y="5.5" width="7" height="7.5" rx="1.5"/><path d="M3.5 10.5v-6A1.5 1.5 0 0 1 5 3h5.5"/>'),
   file: svg('<path d="M4.5 2.5h4.8l3.2 3.2v7.3a.8.8 0 0 1-.8.8H4.5a.8.8 0 0 1-.8-.8V3.3a.8.8 0 0 1 .8-.8z"/><path d="M9 2.5v3.5h3.5"/>'),
   x: svg('<path d="M5 5l6 6M11 5l-6 6"/>'),
+  ask: svg('<circle cx="8" cy="8" r="5.5"/><path d="M6.4 6.3a1.7 1.7 0 0 1 3.2.7c0 1.1-1.6 1.4-1.6 2.4M8 11.3v.1"/>'),
+  lock: svg('<rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5.5a2.5 2.5 0 0 1 5 0V7"/>'),
 };
 ICON.denied = ICON.error;
 const STATUS_WORDS = { done: "done", error: "failed", denied: "denied", running: "in progress", interrupted: "interrupted" };
@@ -40,6 +42,7 @@ const ui = {
   attachments: [], // files for the next message: { id, file, name, size, mime, kind, thumb, prep }
   contextTabs: [], // other tabs for the next message: { id, title, url, favIconUrl }
   sending: false,
+  rec: { status: "idle" }, // workflow recording, from background/workflow.js
 };
 const LIMITS = { files: 10, bytes: 20 * 1024 * 1024, tabs: 10 };
 
@@ -119,6 +122,9 @@ function onMessage(msg) {
       break;
     case "conn":
       setConn(msg.conn);
+      break;
+    case "rec":
+      onRec(msg.rec);
       break;
     case "toast":
       toast(msg.text);
@@ -787,6 +793,10 @@ function openSheet(id) {
     $("historySearch").value = "";
     renderHistory();
     $("historySearch").focus();
+  } else if (id === "reviewSheet") {
+    fillReview();
+    $("wfName").focus();
+    $("wfName").select();
   } else {
     renderSettings();
     const first = sheet.querySelector("input:checked, button");
@@ -800,6 +810,7 @@ function closeSheets(restore = true) {
     s.hidden = true;
   }
   $("app").inert = false;
+  renderRec();
   if (was && restore) (sheetOpener && sheetOpener.isConnected ? sheetOpener : $("input")).focus();
 }
 document.addEventListener("keydown", (e) => {
@@ -809,7 +820,7 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     closeSheets();
   } else if (e.key === "Tab") {
-    const f = [...sheet.querySelectorAll("button, input, select, [tabindex]:not([tabindex='-1'])")].filter((x) => !x.disabled && x.offsetParent !== null);
+    const f = [...sheet.querySelectorAll("button, input, select, textarea, [tabindex]:not([tabindex='-1'])")].filter((x) => !x.disabled && x.offsetParent !== null);
     if (!f.length) return;
     const first = f[0], last = f[f.length - 1];
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -1332,6 +1343,10 @@ $("miTabs").addEventListener("click", () => {
   closeMenu(false);
   openTabPicker();
 });
+$("miRecord").addEventListener("click", () => {
+  closeMenu(false);
+  startRecording();
+});
 $("fileInput").addEventListener("change", (e) => {
   addFiles(e.target.files);
   e.target.value = "";
@@ -1500,6 +1515,257 @@ document.addEventListener("keydown", (e) => {
   if (!e.altKey || e.metaKey || e.ctrlKey) return;
   if (e.code === "KeyN") { e.preventDefault(); post({ cmd: "new" }); }
   if (e.code === "KeyH") { e.preventDefault(); openSheet("historySheet"); }
+});
+
+// ------------------------------------------------------------------ workflow recording
+// You show Claude a task once: the background page records your own clicks, typing
+// and navigation (content/recorder.js, workflow.js), you review the steps here, and
+// the helper app saves them as a skill you run with /<name>.
+const recActive = () => ui.rec.status === "recording" || ui.rec.status === "paused";
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+// Same rules as workflow.js, for the live "/command" preview.
+function slugify(name) {
+  return String(name || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64).replace(/-+$/, "");
+}
+
+async function startRecording() {
+  if (ui.chat && ui.chat.running) return toast("Wait for Claude to finish, or stop it, before you record.");
+  closeSheets(false);
+  try {
+    await request({ cmd: "rec.start", tabId: ui.activeTab ? ui.activeTab.id : undefined, windowId: ui.windowId });
+    const site = ui.activeTab ? siteOf(ui.activeTab.url) : null;
+    announce(`Recording started${site ? ` on ${site}` : ""}. Do the task in the page; ccfox records your own clicks, typing and page changes. Stop when you're done.`, true);
+    setTimeout(() => $("btnRecStop").focus(), 50);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+function onRec(rec) {
+  const prev = ui.rec || { status: "idle" };
+  ui.rec = rec || { status: "idle" };
+  const n = (ui.rec.steps || []).length;
+  if (ui.rec.status === "recording" && prev.status === "recording" && n > (prev.steps || []).length) {
+    announce(`Step ${n}: ${ui.rec.steps[n - 1].text}`);
+  }
+  if (prev.status !== ui.rec.status) {
+    if (ui.rec.status === "paused") announce("Recording paused. Nothing is recorded until you resume.", true);
+    if (ui.rec.status === "recording" && prev.status === "paused") announce("Recording resumed.", true);
+    if (ui.rec.status === "review") {
+      announce(`Recording stopped with ${plural(n, "step")}. Review them and save.`, true);
+      openSheet("reviewSheet");
+    }
+    if (ui.rec.status === "idle" && !$("reviewSheet").hidden) closeSheets();
+  }
+  renderRec();
+  if (!$("reviewSheet").hidden && ui.rec.status === "review") renderReviewSteps();
+}
+
+function renderRec() {
+  const r = ui.rec;
+  const bar = $("recbar");
+  const showBar = recActive() || (r.status === "review" && $("reviewSheet").hidden);
+  bar.hidden = !showBar;
+  $("composer").hidden = recActive();
+  if (!showBar) return;
+  const n = (r.steps || []).length;
+  bar.classList.toggle("paused", r.status === "paused");
+  bar.classList.toggle("review", r.status === "review");
+  $("recCount").textContent = plural(n, "step");
+  if (r.status === "review") {
+    $("recTitle").textContent = "Recording stopped";
+    $("recSub").textContent = n ? "Review the steps, then save them as a skill." : "No steps were recorded.";
+  } else {
+    $("recTitle").textContent = r.status === "paused" ? "Recording paused" : "Recording your steps";
+    $("recSub").textContent = r.status === "paused" ? "Nothing is recorded until you resume." : "Do the task in the page. Only your own clicks, typing and page changes are recorded.";
+  }
+  const last = n ? r.steps[n - 1].text : "";
+  $("recLast").hidden = !last || r.status === "review";
+  $("recLast").replaceChildren(el("span", "", last ? `Last: ${last}` : ""));
+  const pause = $("btnRecPause");
+  pause.hidden = r.status === "review";
+  pause.textContent = r.status === "paused" ? "Resume" : "Pause";
+  $("btnRecCancel").textContent = r.status === "review" ? "Discard" : "Cancel";
+  $("btnRecStop").textContent = r.status === "review" ? "Review and save" : "Stop and review";
+}
+
+$("btnRecPause").addEventListener("click", () => post({ cmd: ui.rec.status === "paused" ? "rec.resume" : "rec.pause" }));
+$("btnRecStop").addEventListener("click", () => {
+  if (ui.rec.status === "review") openSheet("reviewSheet");
+  else post({ cmd: "rec.stop" });
+});
+$("btnRecCancel").addEventListener("click", () => discardRecording());
+$("btnRecord2").addEventListener("click", () => startRecording());
+
+function discardRecording() {
+  const n = (ui.rec.steps || []).length;
+  post({ cmd: "rec.cancel" });
+  closeSheets(false);
+  $("input").focus();
+  announce(n ? `Discarded the recording (${plural(n, "step")}).` : "Stopped recording.");
+}
+
+// ---------- the review sheet
+let metaTimer = null;
+function fillReview() {
+  const m = ui.rec.meta || {};
+  $("wfName").value = m.name || "";
+  $("wfDesc").value = m.description || "";
+  $("wfNote").value = m.note || "";
+  $("wfTidy").checked = !!m.tidy;
+  $("wfConflict").hidden = true;
+  setNameError("");
+  renderSlug();
+  renderReviewSteps();
+}
+
+function renderSlug() {
+  const slug = slugify($("wfName").value);
+  const hint = $("wfSlug");
+  hint.replaceChildren();
+  if (slug) hint.append("Command: ", el("code", "", `/${slug}`));
+  else hint.textContent = "Use letters or numbers; the name becomes the command.";
+}
+
+function setNameError(text) {
+  $("wfNameErr").hidden = !text;
+  $("wfNameErr").textContent = text;
+  $("wfName").setAttribute("aria-invalid", text ? "true" : "false");
+}
+
+function saveMeta() {
+  clearTimeout(metaTimer);
+  metaTimer = setTimeout(() => post({ cmd: "rec.edit", op: "meta", name: $("wfName").value, description: $("wfDesc").value, note: $("wfNote").value, tidy: $("wfTidy").checked }), 250);
+}
+for (const id of ["wfName", "wfDesc", "wfNote"]) $(id).addEventListener("input", () => {
+  if (id === "wfName") {
+    renderSlug();
+    setNameError("");
+    $("wfConflict").hidden = true;
+  }
+  saveMeta();
+});
+$("wfTidy").addEventListener("change", saveMeta);
+
+function renderReviewSteps() {
+  const list = $("wfSteps");
+  const steps = ui.rec.steps || [];
+  // Keep focus on the same control across re-renders.
+  const ae = document.activeElement;
+  const keep = ae && list.contains(ae) ? { id: ae.closest("[data-id]")?.dataset.id, role: ae.dataset.role } : null;
+  list.replaceChildren();
+  $("wfStepsTitle").textContent = steps.length ? `Steps (${steps.length})` : "Steps";
+  if (!steps.length) list.append(el("li", "wf-empty", "No steps were recorded. Discard this, and record again."));
+  steps.forEach((s, i) => {
+    const li = el("li", `wf-step${s.sensitive ? " secret" : ""}`);
+    li.dataset.id = s.id;
+    const body = el("div", "wf-body");
+    const text = el("span", "wf-text", s.text);
+    text.id = `wf-t-${s.id}`;
+    body.append(text);
+    if (s.sensitive) {
+      const lock = el("span", "wf-lock");
+      lock.innerHTML = ICON.lock;
+      lock.append(el("span", "", "Never stored · Claude asks you each time"));
+      body.append(lock);
+    } else if (s.canAsk) {
+      const ask = el("button", "wf-ask");
+      ask.dataset.role = "ask";
+      ask.setAttribute("aria-pressed", String(!!s.ask));
+      ask.setAttribute("aria-describedby", text.id);
+      ask.innerHTML = ICON.ask;
+      ask.append(el("span", "", s.ask ? "Asks each time" : "Ask each time"));
+      ask.title = s.ask ? "Claude asks you for this value each time. Click to keep the recorded value instead." : "Don't save this value; Claude asks you for it each time";
+      ask.addEventListener("click", () => {
+        post({ cmd: "rec.edit", op: "ask", id: s.id, ask: !s.ask });
+        announce(s.ask ? "The recorded value will be saved." : "Claude will ask for this value each time.");
+      });
+      body.append(ask);
+    }
+    const del = el("button", "icon-btn");
+    del.dataset.role = "del";
+    del.innerHTML = ICON.trash;
+    del.title = "Delete this step";
+    del.setAttribute("aria-label", `Delete step ${i + 1}: ${s.text}`);
+    del.addEventListener("click", () => {
+      const next = steps[i + 1] || steps[i - 1];
+      ui.reviewFocus = next ? { id: next.id, role: "del" } : null;
+      post({ cmd: "rec.edit", op: "delete", id: s.id });
+      announce(`Deleted step ${i + 1}.`);
+    });
+    li.append(el("span", "wf-num", `${i + 1}`), body, del);
+    list.append(li);
+  });
+  const want = ui.reviewFocus || keep;
+  ui.reviewFocus = null;
+  if (want) {
+    const target = want.id && list.querySelector(`[data-id="${CSS.escape(want.id)}"] [data-role="${want.role || "del"}"]`);
+    (target || (steps.length ? list.querySelector("[data-role=del]") : $("wfName"))).focus();
+  }
+}
+
+async function saveWorkflow(overwrite = false) {
+  const slug = slugify($("wfName").value);
+  if (!slug) {
+    setNameError("Give it a name with some letters or numbers.");
+    return $("wfName").focus();
+  }
+  const clash = (ui.catalog.commands || []).find((c) => c.name === slug && c.builtin);
+  if (clash) {
+    setNameError(`/${slug} is a built-in Claude Code command. Pick another name.`);
+    return $("wfName").focus();
+  }
+  if (!(ui.rec.steps || []).length) return toast("There are no steps to save.");
+  clearTimeout(metaTimer);
+  post({ cmd: "rec.edit", op: "meta", name: $("wfName").value, description: $("wfDesc").value, note: $("wfNote").value, tidy: $("wfTidy").checked });
+  const btn = $("wfSave");
+  btn.disabled = true;
+  try {
+    const r = await request({ cmd: "rec.save", overwrite });
+    if (r && r.exists) {
+      $("wfConflictText").textContent = r.recorded
+        ? `You already have a recorded workflow called /${r.slug}. Replace it with this one?`
+        : `You already have a skill called /${r.slug} that ccfox didn't record. Replacing it deletes its current instructions.`;
+      $("wfConflict").hidden = false;
+      announce($("wfConflictText").textContent, true);
+      $("wfReplace").focus();
+      return;
+    }
+    closeSheets(false);
+    if (r.tidy) {
+      send(`I just recorded a browser workflow and saved it as the skill /${r.slug}, in ${r.path}. Read that file and tidy it up: merge or drop redundant steps, describe elements so they're easy to find again, and turn values that will change next time into things to ask me for. Keep the frontmatter name, the privacy rules and the "How to run it" section. Don't run the workflow. Then tell me briefly what you changed.`);
+      toast(`Saved /${r.slug}. Claude is tidying it up.`);
+    } else {
+      toast(`Saved /${r.slug} to your skills.`, "Run it now", () => {
+        const t = $("input");
+        t.value = `/${r.slug} `;
+        t.focus();
+        autosize();
+        $("picker").hidden = true;
+      });
+      $("input").focus();
+    }
+    announce(`Saved the workflow as /${r.slug}.`, true);
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+$("wfSave").addEventListener("click", () => saveWorkflow(false));
+$("wfReplace").addEventListener("click", () => saveWorkflow(true));
+$("wfRename").addEventListener("click", () => {
+  $("wfConflict").hidden = true;
+  $("wfName").focus();
+  $("wfName").select();
+});
+$("wfDiscard").addEventListener("click", () => discardRecording());
+$("wfName").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    saveWorkflow(false);
+  }
 });
 
 // ------------------------------------------------------------------ boot

@@ -88,6 +88,10 @@ async function onHostMessage(msg) {
     Chat.onCatalog(msg);
     return;
   }
+  if (msg.type === "skill.saved") {
+    Workflow.onHostReply(msg);
+    return;
+  }
   if (msg.type === "chat.event") {
     Chat.onHostEvent(msg.chatId, msg.event);
     return;
@@ -194,6 +198,7 @@ async function ensureAgent(tabId) {
   });
   if (present) return;
   await browser.tabs.executeScript(tabId, { file: "/content/console-hook.js", runAt: "document_start" }).catch(() => {});
+  await browser.tabs.executeScript(tabId, { file: "/content/naming.js", runAt: "document_end" });
   await browser.tabs.executeScript(tabId, { file: "/content/agent.js", runAt: "document_end" });
 }
 

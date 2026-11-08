@@ -152,6 +152,7 @@ const Chat = (() => {
     switch (msg.cmd) {
       case "hello":
         port.postMessage({ type: "state", settings, history, conn: connectionInfo(), catalog });
+        port.postMessage({ type: "rec", rec: Workflow.snapshot() });
         refreshCatalog(false);
         return;
       case "open": {
@@ -239,6 +240,8 @@ const Chat = (() => {
         }
       }
       default:
+        // Workflow recording: rec.start, rec.stop, rec.save, ...
+        if (typeof msg.cmd === "string" && msg.cmd.startsWith("rec.")) return Workflow.onPanel(msg);
         return;
     }
   }
@@ -252,7 +255,8 @@ const Chat = (() => {
   function refreshCatalog(force) {
     if (!state.port) return;
     if (!force && catalog.fetchedAt && Date.now() - catalog.fetchedAt < CATALOG_TTL) return;
-    if (catalogPending) return;
+    if (catalogPending && !force) return;
+    clearTimeout(catalogPending);
     catalogPending = setTimeout(() => (catalogPending = null), 30000);
     try {
       send_({ type: "catalog" });
@@ -663,5 +667,5 @@ const Chat = (() => {
     try { send_({ type: "chat.stop", chatId }); } catch {}
   }
 
-  return { onHostEvent, onConnection, onCatalog, pendingApprovals, getSettings, stop };
+  return { onHostEvent, onConnection, onCatalog, pendingApprovals, getSettings, stop, broadcast, refreshCatalog };
 })();

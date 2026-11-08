@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "ccfox",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Claude Code in your Zen/Firefox side panel, and browser control for Claude Code. Runs your local Claude Code; nothing listens on the network.",
   "browser_specific_settings": {
     "gecko": {
@@ -27,6 +27,7 @@
     "scripts": [
       "chat.js",
       "highlight.js",
+      "workflow.js",
       "background.js"
     ],
     "persistent": true

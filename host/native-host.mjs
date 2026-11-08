@@ -30,7 +30,7 @@ const HOME = process.env.CCFOX_HOME || path.join(os.homedir(), ".ccfox");
 const SOCK = path.join(HOME, "bridge.sock");
 const LOG = path.join(HOME, "host.log");
 const CONFIG = path.join(HOME, "config.json");
-const VERSION = "0.5.0";
+const VERSION = "0.6.0";
 const MAX_TO_BROWSER = 1024 * 1024; // Firefox limit for host -> extension messages
 
 fs.mkdirSync(HOME, { recursive: true, mode: 0o700 });
@@ -122,6 +122,7 @@ function onBrowserMessage(msg) {
     case "chat.close": return chatClose(msg.chatId);
     case "chat.permission": return chatPermission(msg);
     case "catalog": return fetchCatalog();
+    case "skill.save": return saveSkill(msg);
     default:
       log("unknown browser message", msg.type);
   }
@@ -776,6 +777,7 @@ function chatPermission(msg) {
 // A second message follows with the installed plugins and connector statuses
 // (reloadPlugins() on the same throwaway session, also token-free).
 let catalogBusy = false;
+let catalogAgain = false; // asked again while busy (e.g. right after saving a skill)
 
 // Long descriptions are cut, but the "(source)" at the end (user, project, a plugin,
 // "claude.ai sync") is kept: the panel groups the picker by it.
@@ -786,7 +788,10 @@ function clipDescription(d) {
   return tail ? `${d.slice(0, 270).trimEnd()}… (${tail[1]})` : `${d.slice(0, 299)}…`;
 }
 async function fetchCatalog() {
-  if (catalogBusy) return;
+  if (catalogBusy) {
+    catalogAgain = true;
+    return;
+  }
   const claude = findClaude();
   if (!claude) {
     toBrowser({ type: "catalog", error: "claude CLI not found" });
@@ -845,6 +850,78 @@ async function fetchCatalog() {
       else abort.abort();
     } catch {}
     catalogBusy = false;
+    if (catalogAgain) {
+      catalogAgain = false;
+      fetchCatalog();
+    }
+  }
+}
+
+// ------------------------------------------------------------------ recorded workflows
+// The panel records a workflow and sends the finished SKILL.md; this writes it as a
+// Claude Code user skill, <skills dir>/<slug>/SKILL.md. The skills dir is
+// ~/.claude/skills, unless CCFOX_SKILLS_DIR or "skillsDir" in ~/.ccfox/config.json
+// points elsewhere (the tests use a throwaway one). It never writes outside that
+// folder, never through a symlink, and never replaces an existing skill unless the
+// user confirmed it in the panel (overwrite: true).
+const SKILL_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
+const RECORDED_MARK = "recorded this workflow in the browser with ccfox";
+const MAX_SKILL_BYTES = 256 * 1024;
+
+function skillsDir() {
+  return process.env.CCFOX_SKILLS_DIR || readConfig().skillsDir || path.join(os.homedir(), ".claude", "skills");
+}
+
+function saveSkill(msg) {
+  const reply = (r) => {
+    try {
+      toBrowser({ type: "skill.saved", reqId: msg.reqId, ...r });
+    } catch (e) {
+      log("skill reply failed", String(e));
+    }
+  };
+  try {
+    const slug = String(msg.slug || "");
+    if (!SKILL_SLUG.test(slug)) throw new Error("The skill name must be lowercase letters, numbers and dashes.");
+    const content = String(msg.content || "");
+    if (Buffer.byteLength(content) > MAX_SKILL_BYTES) throw new Error("This workflow is too long to save as a skill.");
+    if (!content.startsWith(`---\nname: ${slug}\n`)) throw new Error("The skill file is malformed.");
+    const root = skillsDir();
+    fs.mkdirSync(root, { recursive: true });
+    const realRoot = fs.realpathSync(root);
+    const dir = path.join(realRoot, slug);
+    if (path.dirname(dir) !== realRoot) throw new Error("Unsafe skill name.");
+    const file = path.join(dir, "SKILL.md");
+    let exists = false;
+    try {
+      const st = fs.lstatSync(dir);
+      if (st.isSymbolicLink() || !st.isDirectory()) throw new Error(`${dir} isn't a plain folder, so ccfox won't write there.`);
+      exists = true;
+    } catch (e) {
+      if (e.code !== "ENOENT") throw e;
+    }
+    if (exists) {
+      let recorded = false;
+      try {
+        const st = fs.lstatSync(file);
+        if (st.isSymbolicLink()) throw new Error(`${file} is a symlink, so ccfox won't replace it.`);
+        recorded = fs.readFileSync(file, "utf8").includes(RECORDED_MARK);
+      } catch (e) {
+        if (e.code !== "ENOENT") throw e;
+      }
+      if (!msg.overwrite) return reply({ ok: false, exists: true, recorded, path: file });
+    } else {
+      fs.mkdirSync(dir);
+    }
+    // Write next to it, then rename: a half-written skill is never picked up.
+    const tmp = path.join(dir, `.SKILL.md.${process.pid}.${Date.now()}.tmp`);
+    fs.writeFileSync(tmp, content, { flag: "wx", mode: 0o644 });
+    fs.renameSync(tmp, file);
+    log("saved recorded workflow", file, exists ? "(replaced)" : "");
+    reply({ ok: true, path: file, replaced: exists });
+  } catch (e) {
+    log("skill save failed", String((e && e.message) || e));
+    reply({ ok: false, error: String((e && e.message) || e) });
   }
 }
 

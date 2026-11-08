@@ -50,6 +50,23 @@
 
     <div class="dock" id="dock" hidden></div>
 
+    <section class="recbar" id="recbar" aria-labelledby="recTitle" hidden>
+      <div class="recbar-head">
+        <span class="rec-dot" id="recDot" aria-hidden="true"></span>
+        <span class="recbar-text">
+          <strong id="recTitle">Recording your steps</strong>
+          <span class="recbar-sub" id="recSub">Do the task in the page. Only your own clicks and typing are recorded.</span>
+        </span>
+        <span class="rec-count" id="recCount">0 steps</span>
+      </div>
+      <p class="recbar-last" id="recLast" hidden></p>
+      <div class="recbar-actions" id="recActions">
+        <button class="btn small" id="btnRecPause">Pause</button>
+        <button class="btn small ghost" id="btnRecCancel">Cancel</button>
+        <button class="btn small primary" id="btnRecStop">Stop and review</button>
+      </div>
+    </section>
+
     <footer class="composer" id="composer">
       <div class="column">
         <div class="target" id="target">
@@ -84,6 +101,11 @@
             <button class="menu-item" role="menuitem" id="miTabs" tabindex="-1" aria-haspopup="dialog">
               <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="6.5" width="10" height="9" rx="1.5"/><path d="M6.5 4h8.5A1.5 1.5 0 0 1 16.5 5.5V13"/></svg>
               <span class="mi-text"><span>Add tabs as context</span><span class="mi-sub">Claude can read the tabs you pick</span></span>
+            </button>
+            <div class="menu-sep" role="separator"></div>
+            <button class="menu-item" role="menuitem" id="miRecord" tabindex="-1">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><circle class="rec-fill" cx="10" cy="10" r="3"/></svg>
+              <span class="mi-text"><span>Record a workflow</span><span class="mi-sub">Show Claude a task once; save it as a skill</span></span>
             </button>
           </div>
           <div class="popover tab-pick" id="tabPick" role="dialog" aria-labelledby="tabPickTitle" hidden>
@@ -166,7 +188,10 @@
         <span class="model settings-model"><select id="settingsModel"><option value="">Default model</option></select><svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg></span>
       </label>
       <dl class="facts" id="facts"></dl>
-      <button class="btn small ghost" id="btnBrowseSkills">Browse skills, plugins and agents</button>
+      <div class="row-actions">
+        <button class="btn small ghost" id="btnBrowseSkills">Browse skills, plugins and agents</button>
+        <button class="btn small ghost" id="btnRecord2">Record a workflow</button>
+      </div>
     </section>
     <section class="group">
       <h3>Connectors</h3>
@@ -184,6 +209,45 @@
         <button class="btn small ghost" id="btnCopySetup2">Copy setup command</button>
       </div>
     </section>
+  </div>
+
+  <div class="sheet" id="reviewSheet" role="dialog" aria-modal="true" aria-labelledby="reviewTitle" aria-describedby="reviewSub" hidden>
+    <div class="sheet-head">
+      <h2 id="reviewTitle">Save your workflow</h2>
+      <button class="icon-btn" data-close aria-label="Close. Your recording stays until you save or discard it.">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/></svg>
+      </button>
+    </div>
+    <p class="sheet-sub" id="reviewSub">It becomes one of your skills. Run it with its command here, or in any Claude Code session that has ccfox.</p>
+    <div class="wf-fields">
+      <label class="field" for="wfName">
+        <span class="field-label">Name</span>
+        <input id="wfName" type="text" maxlength="80" autocomplete="off" spellcheck="false" aria-describedby="wfSlug wfNameErr">
+        <span class="field-hint" id="wfSlug"></span>
+        <span class="field-err" id="wfNameErr" hidden></span>
+      </label>
+      <label class="field" for="wfDesc">
+        <span class="field-label">Description</span>
+        <input id="wfDesc" type="text" maxlength="200" autocomplete="off" placeholder="What it does, in one line">
+      </label>
+      <label class="field" for="wfNote">
+        <span class="field-label">Notes for Claude <span class="field-opt">optional</span></span>
+        <textarea id="wfNote" rows="3" maxlength="4000" placeholder="What this is for, and what may be different next time"></textarea>
+      </label>
+    </div>
+    <section class="group">
+      <h3 class="wf-steps-head"><span id="wfStepsTitle">Steps</span><span class="wf-steps-note">Typed values are saved. Choose “Ask each time” to leave one out.</span></h3>
+      <ol class="wf-steps" id="wfSteps" aria-labelledby="wfStepsTitle"></ol>
+    </section>
+    <label class="toggle wf-tidy"><input type="checkbox" id="wfTidy"><span>Let Claude tidy it up after saving<span class="choice-sub">Claude reads the new skill and makes its steps more general. You approve its edits.</span></span></label>
+    <div class="wf-conflict" id="wfConflict" role="alert" hidden>
+      <p id="wfConflictText"></p>
+      <div class="row-actions"><button class="btn small" id="wfReplace">Replace it</button><button class="btn small ghost" id="wfRename">Change the name</button></div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn ghost danger" id="wfDiscard">Discard</button>
+      <button class="btn primary" id="wfSave">Save skill</button>
+    </div>
   </div>
 
   <div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button class="toast-action" id="toastAction" hidden></button></div>

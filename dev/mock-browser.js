@@ -1,6 +1,6 @@
 // Fake WebExtension `browser` API for previewing the side panel outside Zen.
 // ?state=empty|conversation|approval|commit|bash|running|error|history|settings|picker|agents|
-//        attachments|menu|tabs|drop|auto|disconnected
+//        attachments|menu|tabs|drop|auto|disconnected|recording|paused|review|conflict
 "use strict";
 
 (() => {
@@ -16,7 +16,7 @@
     { id: "c3", title: "Fill in the expense report from the receipts tab", site: "expensify.com", updatedAt: Date.now() - 26 * 3600e3 },
     { id: "c4", title: "Compare pricing on the three hosting providers I have open", site: "vercel.com", updatedAt: Date.now() - 4 * 86400e3 },
   ];
-  const conn = { connected: stateName !== "disconnected", lastError: stateName === "disconnected" ? "No such native application ccfox" : null, claude: "/Users/you/.local/bin/claude", hostVersion: "0.5.0", externalSessions: 1, canGroupTabs: true };
+  const conn = { connected: stateName !== "disconnected", lastError: stateName === "disconnected" ? "No such native application ccfox" : null, claude: "/Users/you/.local/bin/claude", hostVersion: "0.6.0", externalSessions: 1, canGroupTabs: true };
   const skill = (name, description, argumentHint = "", builtin = false) => ({ name, description, argumentHint, builtin });
   const catalog = {
     commands: [
@@ -127,6 +127,33 @@
   chats.drop = [];
   chats.auto = chats.conversation;
   chats.disconnected = [];
+  chats.recording = chats.conversation;
+  chats.paused = chats.conversation;
+  chats.review = chats.conversation;
+  chats.conflict = chats.conversation;
+
+  // Workflow recording: a recording in progress, and the review sheet after Stop.
+  const recStep = (kind, text, extra = {}) => ({ id: Math.random().toString(36).slice(2), kind, text, url: tab.url, at: Date.now(), canAsk: kind === "type" || kind === "select", ...extra });
+  const recSteps = [
+    recStep("open", "Start on github.com/acme/storefront/pulls (“Pull requests · acme/storefront”)"),
+    recStep("type", "Type “is:open author:app/dependabot” into the search field “Search all pull requests”", { value: "is:open author:app/dependabot" }),
+    recStep("key", "Press Enter in the search field “Search all pull requests”; it goes to github.com/acme/storefront/pulls?q=is%3Aopen"),
+    recStep("click", "Click the link “Bump vite from 5.4.2 to 5.4.11” under the heading “7 Open”; it goes to github.com/acme/storefront/pull/482"),
+    recStep("click", "Click the button “Review changes”"),
+    recStep("radio", "Choose the option “Approve” in “Review changes”"),
+    recStep("type", "Type the user's “Leave a comment” into the field “Leave a comment” in the “Review changes” dialog (ask each time)", { value: "Thanks, looks good!", ask: true, param: "Leave a comment" }),
+    recStep("type", "The user enters their password in the field “Password” in the “Confirm access” dialog (ask the user; never stored)", { sensitive: "password", canAsk: false }),
+    recStep("click", "Click the button “Submit review” to submit the form", { submits: true }),
+  ];
+  const recStates = { recording: "recording", paused: "paused", review: "review", conflict: "review" };
+  const rec = recStates[stateName]
+    ? {
+        status: recStates[stateName],
+        startedAt: Date.now() - 95e3,
+        meta: { name: recStates[stateName] === "review" ? "Approve Dependabot PRs" : "", description: recStates[stateName] === "review" ? "Approve the open Dependabot pull requests on acme/storefront" : "", note: "", tidy: false },
+        steps: recStates[stateName] === "review" ? recSteps : recSteps.slice(0, 4),
+      }
+    : { status: "idle" };
 
   const chat = {
     id: "c1",
@@ -146,7 +173,28 @@
     postMessage(msg) {
       const reply = (m) => setTimeout(() => listeners.forEach((fn) => fn(m)), 0);
       switch (msg.cmd) {
-        case "hello": return reply({ type: "state", settings, history, conn, catalog });
+        case "hello":
+          reply({ type: "state", settings, history, conn, catalog });
+          return reply({ type: "rec", rec });
+        case "rec.edit":
+          if (msg.op === "delete") rec.steps = rec.steps.filter((x) => x.id !== msg.id);
+          if (msg.op === "ask") {
+            const st = rec.steps.find((x) => x.id === msg.id);
+            if (st) st.ask = msg.ask;
+          }
+          if (msg.op === "meta") Object.assign(rec.meta, { name: msg.name, description: msg.description, note: msg.note, tidy: msg.tidy });
+          return reply({ type: "rec", rec: { ...rec } });
+        case "rec.save":
+          return reply({ type: "reply", reqId: msg.reqId, ok: true, result: stateName === "conflict" && !msg.overwrite ? { exists: true, recorded: true, slug: "approve-dependabot-prs" } : { ok: true, slug: "approve-dependabot-prs", path: "~/.claude/skills/approve-dependabot-prs/SKILL.md" } });
+        case "rec.pause":
+        case "rec.resume":
+          rec.status = msg.cmd === "rec.pause" ? "paused" : "recording";
+          return reply({ type: "rec", rec: { ...rec } });
+        case "rec.stop":
+          rec.status = "review";
+          return reply({ type: "rec", rec: { ...rec } });
+        case "rec.cancel":
+          return reply({ type: "rec", rec: { status: "idle" } });
         case "new":
         case "open": return reply({ type: "chat", chat });
         case "settings": Object.assign(settings, msg.patch); return reply({ type: "settings", settings });
@@ -231,6 +279,7 @@
         renderAttachments();
         openTabPicker();
       }
+      if (stateName === "conflict") setTimeout(() => document.getElementById("wfSave").click(), 100);
       if (stateName === "drop") {
         seed().then(() => (document.getElementById("dropHint").hidden = false));
       }

@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = Number(process.argv[2]) || 4317;
 const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".png": "image/png" };
-const STATES = ["empty", "conversation", "attachments", "menu", "tabs", "drop", "approval", "commit", "bash", "running", "error", "picker", "agents", "history", "settings", "auto", "disconnected"];
+const STATES = ["empty", "conversation", "attachments", "menu", "tabs", "drop", "approval", "commit", "bash", "running", "error", "picker", "agents", "history", "settings", "auto", "disconnected", "recording", "paused", "review", "conflict"];
 
 function panelHtml(theme) {
   let html = fs.readFileSync(path.join(ROOT, "extension/sidebar/panel.html"), "utf8");
@@ -27,9 +27,10 @@ function gallery() {
   const w = (s, t, width) => `<figure><figcaption>${s} · ${t} · ${width}px</figcaption><iframe src="/panel?state=${s}&theme=${t}" width="${width}" height="720" title="${s} ${t}"></iframe></figure>`;
   const frames = [
     ...STATES.flatMap((s) => ["light", "dark"].map((t) => w(s, t, 380))),
-    ...["approval", "bash", "conversation", "attachments", "picker", "menu", "tabs", "settings"].map((s) => w(s, "dark", 250)),
-    ...["attachments", "picker", "tabs"].map((s) => w(s, "light", 250)),
-    ...["conversation", "approval", "attachments", "picker", "settings"].map((s) => w(s, "light", 640)),
+    ...["approval", "bash", "conversation", "attachments", "picker", "menu", "tabs", "settings", "recording", "review"].map((s) => w(s, "dark", 250)),
+    ...["attachments", "picker", "tabs", "recording", "review"].map((s) => w(s, "light", 250)),
+    ...["conversation", "approval", "attachments", "picker", "settings", "recording", "review"].map((s) => w(s, "light", 640)),
+    ...["recording", "review"].map((s) => w(s, "dark", 640)),
   ].join("\n");
   return `<!doctype html><meta charset="utf-8"><title>ccfox panel states</title>
 <style>body{font:13px system-ui;margin:16px;background:#888}main{display:flex;flex-wrap:wrap;gap:16px}figure{margin:0}figcaption{color:#fff;margin-bottom:4px}iframe{border:0;display:block;box-shadow:0 2px 10px #0004}</style>

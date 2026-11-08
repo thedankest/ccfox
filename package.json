@@ -1,6 +1,6 @@
 {
   "name": "ccfox",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "main": "server/mcp-server.mjs",
   "scripts": {
     "install-host": "node scripts/install.mjs",
@@ -8,7 +8,7 @@
     "build": "node scripts/install.mjs",
     "lint:ext": "web-ext lint --source-dir extension",
     "dev": "web-ext run --source-dir extension --firefox /Applications/Zen.app/Contents/MacOS/zen --start-url about:debugging#/runtime/this-firefox",
-    "test": "node test/e2e.mjs",
+    "test": "node test/e2e.mjs && node test/record-e2e.mjs",
     "test:panel": "node test/panel-e2e.mjs"
   },
   "license": "MIT",
