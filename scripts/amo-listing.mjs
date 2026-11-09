@@ -59,6 +59,7 @@ async function api(method, url, body) {
   let res = await fetch(`${API}${url}`, { method, headers, body });
   for (let tries = 0; res.status === 429 && tries < 5; tries++) {
     const wait = Number((await res.text()).match(/(\d+) seconds?/)?.[1] ?? 60) + 2;
+    if (wait > 15 * 60) fail(`AMO's rate limit asks for a ${Math.round(wait / 3600)}h wait (likely a daily quota). Run this again later; it picks up where it stopped.`);
     console.log(`  AMO asked to slow down; waiting ${wait}s…`);
     await new Promise((r) => setTimeout(r, wait * 1000));
     headers.Authorization = `JWT ${token()}`;
