@@ -1,5 +1,7 @@
 {
-  "name": { "en-US": "ccfox: side panel for Claude Code" },
+  "name": {
+    "en-US": "ccfox: side panel for Claude Code"
+  },
   "slug": "ccfox",
   "summary": {
     "en-US": "Chat with your own Claude Code in a Zen or Firefox side panel, and let Claude Code sessions read and act in your browser. Needs the free ccfox helper (from GitHub) and Claude Code on your computer. Unofficial community project, not made by Anthropic."
@@ -7,16 +9,24 @@
   "description": {
     "en-US": "ccfox puts the Claude Code you already have in the side panel of Zen or Firefox, and lets your Claude Code sessions use that same browser: your own profile, tabs and logged-in sites.\n\n**Before you install: ccfox does nothing on its own.** It needs two things on your computer:\n\n1. **Claude Code**, installed and logged in (check with `claude --version`). ccfox has no account or API key of its own; it runs your `claude`, with your Claude login and plan. Claude Code needs a paid Claude plan or an Anthropic API account.\n2. **The ccfox helper**, a small local program that connects the add-on to Claude Code. Install it from GitHub (macOS; Linux is untested; Windows isn't supported): clone https://github.com/thedankest/ccfox, then run `npm install` and `npm run install-host` (needs Node.js 20 or later). You can skip the README's steps about installing an unsigned add-on file.\n\n**What it does**\n\n- **Side panel chat.** Press Alt+Shift+C or click the toolbar button and ask Claude about the page in front of you. Attach files, screenshots or other tabs. Claude can read the page, click, type, fill forms and take screenshots, and asks before acting on a site unless you allow it.\n- **Browser tools for Claude Code.** Register the helper as an MCP server (`claude mcp add`) and any Claude Code session can open tabs, read pages, click, type and read console and network logs, for example to test a site you're building.\n- **Workflow recording.** Show a task once and save it as a Claude Code skill you can run again.\n- Tabs Claude opens go into an orange \"Claude\" tab group, and the tab it's using gets an orange glow.\n\n**Your data.** When you ask Claude to do something, ccfox sends what the task needs (the text and outline of the page, screenshots, tab titles and URLs, console and network logs of tabs Claude is using, your messages and attached files) through the local helper to your Claude Code, which sends it to Anthropic (or the provider you configured in Claude Code) to generate replies. ccfox's developer runs no servers and collects nothing: no analytics, no ads, no tracking. Password fields are masked. See the privacy policy for details.\n\n**Not official.** ccfox is an independent, open-source (MIT) community project. It is not made, endorsed or supported by Anthropic. Claude and Claude Code are trademarks of Anthropic.\n\nSource code, issues and setup help: https://github.com/thedankest/ccfox"
   },
-  "categories": ["web-development"],
-  "homepage": { "en-US": "https://github.com/thedankest/ccfox" },
-  "support_url": { "en-US": "https://github.com/thedankest/ccfox/issues" },
+  "categories": [
+    "web-development"
+  ],
+  "homepage": {
+    "en-US": "https://github.com/thedankest/ccfox"
+  },
+  "support_url": {
+    "en-US": "https://github.com/thedankest/ccfox/issues"
+  },
   "requires_payment": true,
   "default_locale": "en-US",
   "version": {
     "license": "MIT",
-    "compatibility": ["firefox"],
+    "compatibility": [
+      "firefox"
+    ],
     "release_notes": {
-      "en-US": "First release on addons.mozilla.org. Permanent add-on ID, Firefox data-collection disclosure, and no runtime code execution in this build (javascript_exec is in the developer build only)."
+      "en-US": "Redesigned side panel: cleaner shadcn-style look, Lucide icons (Settings is now a gear), a calmer thinking indicator and a highlighted approval card. Neutral example data in screenshots."
     }
   }
 }

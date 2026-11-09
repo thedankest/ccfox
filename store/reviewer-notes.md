@@ -1,4 +1,4 @@
-ccfox 0.7.0. Unofficial open-source (MIT) side panel and browser tools for Claude Code, the user's own locally installed agent. Full notes: https://github.com/thedankest/ccfox/blob/main/store/reviewer-notes-full.md
+ccfox 0.8.0. Unofficial open-source (MIT) side panel and browser tools for Claude Code, the user's own locally installed agent. Full notes: https://github.com/thedankest/ccfox/blob/main/store/reviewer-notes-full.md
 
 NATIVE HELPER REQUIRED
 The add-on only talks to the native messaging host "ccfox": plain, unminified Node.js in the same repo (host/, server/). It runs Claude Agent SDK sessions on the user's `claude` binary and listens only on a private Unix socket (~/.ccfox/bridge.sock, 0600), never the network.

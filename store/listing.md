@@ -46,6 +46,10 @@ ccfox puts the Claude Code you already have in the side panel of Zen or Firefox,
 
 Source code, issues and setup help: https://github.com/thedankest/ccfox
 
+## Release notes for 0.8.0
+
+Redesigned side panel: cleaner shadcn-style look, Lucide icons (Settings is now a gear), a calmer thinking indicator and a highlighted approval card. Neutral example data in screenshots.
+
 ## Release notes for 0.7.0
 
 First release on addons.mozilla.org. Permanent add-on ID, Firefox data-collection disclosure, and no runtime code execution in this build (javascript_exec is in the developer build only).

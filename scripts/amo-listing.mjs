@@ -3,6 +3,8 @@
 // Then print what AMO has, so you can check the icon and reviewer notes.
 //   npm run amo:listing            # upload whatever is missing
 //   npm run amo:listing -- --check # only report
+//   --replace-screenshots           # delete AMO's screenshots and upload store/screenshots again
+//   --skip-screenshots              # only the privacy policy and icon
 // Credentials come from the macOS Keychain (service "ccfox-amo"), as in sign-amo.mjs.
 import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -14,6 +16,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const API = "https://addons.mozilla.org/api/v5";
 const ADDON = "ccfox@thedankest";
 const checkOnly = process.argv.includes("--check");
+const skipShots = process.argv.includes("--skip-screenshots");
+const replaceShots = process.argv.includes("--replace-screenshots");
 const SHOTS = [
   ["01-side-panel.png", "Claude Code, right next to the page: it reads the page, and asks before it clicks, types or runs a command."],
   ["02-tab-group.png", "Tabs Claude opens go into an orange \"Claude\" tab group; the tab it's working in glows."],
@@ -70,9 +74,15 @@ let addon = await api("GET", `/addons/addon/${id}/`);
 console.log(`${addon.name?.["en-US"] ?? addon.slug} (${addon.slug}), status ${addon.status}`);
 
 // Screenshots
-const have = [...(addon.previews ?? [])].sort((a, b) => a.position - b.position);
+let have = [...(addon.previews ?? [])].sort((a, b) => a.position - b.position);
+if (replaceShots && !checkOnly && !skipShots) {
+  for (const p of have) await api("DELETE", `/addons/addon/${id}/previews/${p.id}/`);
+  console.log(`screenshots: removed ${have.length} old ones`);
+  have = [];
+}
 const uncaptioned = have.filter((p) => !p.caption?.["en-US"]).length;
-if (have.length >= SHOTS.length && !uncaptioned) console.log(`screenshots: ${have.length} already on AMO`);
+if (skipShots) console.log("screenshots: skipped");
+else if (have.length >= SHOTS.length && !uncaptioned) console.log(`screenshots: ${have.length} already on AMO`);
 else if (checkOnly) console.log(`screenshots: ${have.length} of ${SHOTS.length}, ${uncaptioned} without a caption`);
 else {
   for (const [i, [file, caption]] of SHOTS.entries()) {
