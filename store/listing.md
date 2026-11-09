@@ -70,7 +70,12 @@ No optional categories: ccfox sends no technical or usage data.
 `web-ext sign` doesn't send these:
 
 1. **Icon**: upload `docs/icon.png` (512×512; AMO scales it) on the product page editor.
-2. **Screenshots**: `docs/screenshot-panel.png` and `docs/screenshot-zen.png`, with the captions from README.md.
+2. **Screenshots**: `store/screenshots/01-side-panel.png` to `05-mcp.png` (1280×800, AMO's largest display size), in that order. Captions, matching the headline in each image:
+   1. Claude Code, right next to the page: it reads the page, and asks before it clicks, types or runs a command.
+   2. Tabs Claude opens go into an orange "Claude" tab group; the tab it's working in glows.
+   3. Attach files, a screenshot or other tabs, and pick skills, plugins and agents with /.
+   4. Record a task once and save it as a Claude Code skill.
+   5. Add ccfox as an MCP server and Claude Code can use your browser.
 3. **Privacy policy**: paste `store/privacy-policy.md` into the add-on's Privacy Policy field in the Developer Hub (web-ext can't send it; the API's `eula_policy` endpoint could).
 4. **Support email** (optional): the support site above is enough.
 5. **Reviewer notes** go in automatically (as the version's approval notes, from `store/reviewer-notes.md`); check they're there under the version's "Notes for Reviewers", and re-paste if a later upload doesn't carry them.

@@ -10,21 +10,26 @@
 
 ## Screenshots
 
-![Three ccfox side panels: a message with attached files and a tab, the / picker grouped by source, and an approval card](docs/screenshot-panel.png)
+![Two side panels: Claude asks before it clicks "Review changes" on github.com, and shows the full command before it runs one in the terminal](store/screenshots/01-side-panel.png)
 
-*Attach files, a screenshot or other tabs to a message, pick skills, plugins and agents with `/`, and approve what Claude does on a site.*
+![Two side panels: a message with attached files, a screenshot and a tab, and the / picker grouped by your skills and each plugin](store/screenshots/03-context.png)
 
-![A Zen window with the orange Claude tab group and the tab highlight](docs/screenshot-zen.png)
+![Recording a workflow: the "Recording your steps" pill, the panel while recording, and the sheet that saves the steps as a skill](store/screenshots/04-workflow-recording.png)
 
-*Tabs Claude opens go into an orange "Claude" tab group, and the tab it's using gets an orange glow and a pill.*
+![A Zen window with the orange Claude tab group and the orange glow and pill on the tab Claude Code is using](store/screenshots/02-tab-group.png)
 
 ## Requirements
 
-- **Zen**, or **Firefox 140 or later**. Stock Firefox release and beta builds can't install unsigned add-ons (see below), so on Firefox use Developer Edition, Nightly or ESR.
+- **Zen**, or **Firefox 140 or later**. Stock Firefox release and beta builds can't install the unsigned add-on you build from this repo (see below), so on Firefox use Developer Edition, Nightly or ESR.
 - **macOS.** This is the platform ccfox is developed and tested on. The installer also registers the helper on Linux (`~/.zen/native-messaging-hosts` and `~/.mozilla/native-messaging-hosts`), but the test and dev scripts assume macOS. Windows is not supported.
 - **Node.js 20 or later**, with npm.
 - **Claude Code**, installed and logged in. Check with `claude --version`.
 - `zip` on your `PATH` (the installer uses it to build the add-on; macOS has it already).
+
+## Install options
+
+- **addons.mozilla.org:** listing coming soon (under review). You still need the helper and Claude Code: follow steps 1, 4 and 5 of the quick start and skip steps 2 and 3.
+- **From source:** the quick start below builds the add-on from this repo. This developer build includes the `javascript_exec` tool, which runs JavaScript in the page. The addons.mozilla.org build leaves it out, because Mozilla's policies don't allow add-ons to run code that isn't shipped inside them.
 
 ## Quick start
 
@@ -39,9 +44,11 @@ npm run install-host
 
 `install-host` copies the helper to `~/.ccfox/`, records where `node` and `claude` live, registers the helper with Zen and Firefox, and builds `dist/ccfox.xpi`. It's safe to re-run.
 
-**2. Allow the unsigned add-on.** ccfox isn't published on addons.mozilla.org, so Mozilla hasn't signed it; you build it yourself from this repo. To install it, open `about:config` and set `xpinstall.signatures.required` to `false`. Zen, Firefox Developer Edition, Nightly and ESR honor this setting. Stock Firefox release ignores it.
+**2. Allow the unsigned add-on.** The add-on you build from this repo isn't signed by Mozilla. To install it, open `about:config` and set `xpinstall.signatures.required` to `false`. Zen, Firefox Developer Edition, Nightly and ESR honor this setting. Stock Firefox release ignores it.
 
 **3. Install the add-on.** Open `about:addons`, click the gear icon, choose **Install Add-on From File…**, and pick `dist/ccfox.xpi` from the `ccfox` folder.
+
+> **Installed a build before 0.7.0?** The add-on ID changed from `ccfox@local` to `ccfox@thedankest`, so Firefox treats it as a different add-on. Remove the old ccfox in `about:addons` first, then install the new one.
 
 > On stock Firefox you can still try it for one session: open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…**, and pick `extension/manifest.json`. It's removed when Firefox quits.
 
@@ -111,6 +118,22 @@ You can also drag files onto the panel, or paste an image into the input. Each a
 | Esc | Stop Claude, or close the open picker, menu or sheet |
 | A / S / D | On a focused approval card: allow once / always allow on this site / deny |
 
+## Recording a workflow
+
+Show Claude a task once in the browser, and ccfox saves it as a Claude Code skill you can run again.
+
+1. **Record.** Click **+** under the input and choose **Record a workflow** (Settings has the same button). Then do the task in the page as you normally would. A "Recording your steps" pill sits at the top of the page, and the panel shows the last step recorded. Recording follows you into tabs you switch to or open. You can pause, resume or cancel.
+2. **Review.** Click **Stop and review**. Give the workflow a name, which becomes its command (for example `/approve-dependabot-prs`), a one-line description and optional notes for Claude. Delete the steps you don't want. Typed values are saved in the skill; choose **Ask each time** on a step to have Claude ask you for that value instead. Tick **Let Claude tidy it up after saving** if you want Claude to make the steps more general; you approve its edits.
+3. **Save and run.** **Save skill** writes `~/.claude/skills/<name>/SKILL.md`. If a skill with that name exists, you can replace it or change the name. Run it with `/<name>` in the panel, or in any Claude Code session that has the ccfox MCP server. Claude never starts it on its own; it runs only when you call it.
+
+What gets recorded:
+
+- Only your own clicks, typing, choices in lists and checkboxes, Enter and form submits, plus page and tab changes. Clicks and typing that Claude or the page simulates are ignored.
+- Passwords, card numbers, one-time codes and ID or bank numbers never leave the page. The step only says which kind of secret you entered, and the skill tells Claude to ask you to type it in yourself.
+- For file pickers, only that you picked a file; never its name or path.
+- Tokens in URLs, such as `token`, `code`, `session` or `key` parameters, are replaced with `…`.
+- When the skill runs, Claude confirms with you before steps that submit, send, pay, delete and the like, even though you did them while recording.
+
 ## Using it from Claude Code
 
 After step 5 of the quick start, start Claude Code anywhere and ask it to use your browser:
@@ -120,6 +143,8 @@ Open http://localhost:3000 in my browser, go through the signup form, and tell m
 ```
 
 The tools are named `mcp__ccfox__<tool>`, for example `mcp__ccfox__read_page`. Inside the side panel the same tools are called `mcp__browser__<tool>`. Claude Code's own permission prompts decide what runs; the side panel's approvals only apply to panel chats.
+
+The server gives MCP clients the ccfox icon, a title for each tool ("Read page outline", "Click, type or screenshot") and hints about which tools only read and which can change things. Clients that support these show them.
 
 | Tool | What it does |
 |---|---|
@@ -131,7 +156,7 @@ The tools are named `mcp__ccfox__<tool>`, for example `mcp__ccfox__read_page`. I
 | `get_page_text` | Visible text of the page |
 | `computer` | Screenshot, zoom, click, hover, type, press keys, scroll, drag, wait |
 | `form_input` | Set inputs, selects, checkboxes, radios and similar by ref |
-| `javascript_exec` | Run JavaScript in the page |
+| `javascript_exec` | Run JavaScript in the page (developer build only) |
 | `read_console_messages` | Console output and uncaught errors |
 | `read_network_requests` | Method, status, type and timing of requests (no bodies) |
 | `resize_window` | Resize the window, for responsive testing |
@@ -197,6 +222,7 @@ Re-run `npm run install-host` after changing anything in `host/`, `server/` or `
 node dev/preview-server.mjs   # http://localhost:4317: every panel state with fake data, light and dark
 npm test                      # browser-control tests in headless Zen with a throwaway profile
 npm run test:panel            # side-panel test with your real Claude Code (Haiku); costs a few cents
+npm run sign:amo -- --dry-run # build and lint the addons.mozilla.org variant in dist/amo/extension; no upload
 ```
 
 To try changes in a visible, throwaway Zen next to your normal one, and call tools from the shell:
