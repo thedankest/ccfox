@@ -1,6 +1,6 @@
 {
   "name": "ccfox",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "main": "server/mcp-server.mjs",
   "scripts": {
     "install-host": "node scripts/install.mjs",

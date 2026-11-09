@@ -11,17 +11,25 @@ const el = (tag, cls, text) => {
   if (text !== undefined && text !== null) n.textContent = text;
   return n;
 };
-const svg = (paths, box = 16) => `<svg viewBox="0 0 ${box} ${box}" aria-hidden="true">${paths}</svg>`;
+// Lucide icons (ISC licence; see THIRD_PARTY_NOTICES.md), inlined as 24-unit SVGs.
+// They go through SafeHTML like everything else that becomes markup.
+const svg = (paths, cls = "") => `<svg${cls ? ` class="${cls}"` : ""} viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 const ICON = {
-  done: svg('<path d="M3.5 8.5l3 3 6-7"/>'),
-  error: svg('<path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/>'),
-  chev: '<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg>',
-  trash: svg('<path d="M3.5 5h9M6.5 5V3.5h3V5M5 5l.5 8h5L11 5"/>'),
-  copy: svg('<rect x="5.5" y="5.5" width="7" height="7.5" rx="1.5"/><path d="M3.5 10.5v-6A1.5 1.5 0 0 1 5 3h5.5"/>'),
-  file: svg('<path d="M4.5 2.5h4.8l3.2 3.2v7.3a.8.8 0 0 1-.8.8H4.5a.8.8 0 0 1-.8-.8V3.3a.8.8 0 0 1 .8-.8z"/><path d="M9 2.5v3.5h3.5"/>'),
-  x: svg('<path d="M5 5l6 6M11 5l-6 6"/>'),
-  ask: svg('<circle cx="8" cy="8" r="5.5"/><path d="M6.4 6.3a1.7 1.7 0 0 1 3.2.7c0 1.1-1.6 1.4-1.6 2.4M8 11.3v.1"/>'),
-  lock: svg('<rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5.5a2.5 2.5 0 0 1 5 0V7"/>'),
+  done: svg('<path d="M20 6 9 17l-5-5"/>'), // check
+  error: svg('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'), // x
+  running: svg('<path d="M21 12a9 9 0 1 1-6.219-8.56"/>'), // loader-circle
+  interrupted: svg('<circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6" rx="1"/>'), // circle-stop
+  chev: svg('<path d="m6 9 6 6 6-6"/>', "chev"), // chevron-down
+  trash: svg('<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'), // trash (trash-2)
+  copy: svg('<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'),
+  file: svg('<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>'),
+  x: svg('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),
+  ask: svg('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'), // circle-question-mark
+  lock: svg('<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
+  alert: svg('<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>'), // circle-alert
+  pause: svg('<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>'),
+  play: svg('<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>'),
+  square: svg('<rect width="18" height="18" x="3" y="3" rx="2"/>'),
 };
 ICON.denied = ICON.error;
 const STATUS_WORDS = { done: "done", error: "failed", denied: "denied", running: "in progress", interrupted: "interrupted" };
@@ -329,6 +337,7 @@ function buildBlock(b, key, ctx) {
     case "error": {
       const li = el("li", "msg-error");
       li.setAttribute("role", "alert");
+      SafeHTML.append(li, ICON.alert);
       li.append(el("strong", "", it.title || "Something went wrong"));
       if (it.text) li.append(el("p", "", it.text));
       if (it.detail && it.detail !== it.text) {
@@ -498,7 +507,7 @@ function renderDock() {
   once.addEventListener("click", () => answer("once"));
   actions.append(deny, once);
   if (p.site && !system) {
-    const always = el("button", "btn ghost always", `Always allow on ${p.site}`);
+    const always = el("button", "btn secondary always", `Always allow on ${p.site}`);
     always.addEventListener("click", () => answer("site"));
     actions.append(always);
   }
@@ -677,6 +686,7 @@ function renderPicker() {
     return;
   }
   closePopovers();
+  picker.dataset.mode = ctx.mode;
   const q = ctx.q;
   const all = pickerEntries().filter((e) => ctx.mode === "all" || e.type === "agent");
   const groups = new Map();
@@ -1562,6 +1572,12 @@ function onRec(rec) {
   if (!$("reviewSheet").hidden && ui.rec.status === "review") renderReviewSteps();
 }
 
+// A button's Lucide icon plus its label; textContent stays just the label.
+function iconLabel(btn, icon, label) {
+  SafeHTML.set(btn, icon);
+  btn.append(el("span", "", label));
+}
+
 function renderRec() {
   const r = ui.rec;
   const bar = $("recbar");
@@ -1585,9 +1601,9 @@ function renderRec() {
   $("recLast").replaceChildren(el("span", "", last ? `Last: ${last}` : ""));
   const pause = $("btnRecPause");
   pause.hidden = r.status === "review";
-  pause.textContent = r.status === "paused" ? "Resume" : "Pause";
+  iconLabel(pause, r.status === "paused" ? ICON.play : ICON.pause, r.status === "paused" ? "Resume" : "Pause");
   $("btnRecCancel").textContent = r.status === "review" ? "Discard" : "Cancel";
-  $("btnRecStop").textContent = r.status === "review" ? "Review and save" : "Stop and review";
+  iconLabel($("btnRecStop"), r.status === "review" ? "" : ICON.square, r.status === "review" ? "Review and save" : "Stop and review");
 }
 
 $("btnRecPause").addEventListener("click", () => post({ cmd: ui.rec.status === "paused" ? "rec.resume" : "rec.pause" }));

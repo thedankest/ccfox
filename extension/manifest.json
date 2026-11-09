@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "ccfox",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Claude Code in your Zen/Firefox side panel, and browser control for Claude Code. Needs the ccfox helper and Claude Code installed on your computer. Unofficial; not made by Anthropic.",
   "author": "thedankest",
   "homepage_url": "https://github.com/thedankest/ccfox",

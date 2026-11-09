@@ -94,14 +94,16 @@ const Markdown = (() => {
 // allowlist of elements and attributes is dropped, links must be http(s), and only
 // then are the nodes moved into the panel.
 const SafeHTML = (() => {
-  const TAGS = new Set(["p", "br", "strong", "em", "code", "pre", "a", "ul", "ol", "li", "blockquote", "h3", "h4", "hr", "kbd", "svg", "path", "rect", "circle"]);
+  const TAGS = new Set(["p", "br", "strong", "em", "code", "pre", "a", "ul", "ol", "li", "blockquote", "h3", "h4", "hr", "kbd", "svg", "path", "rect", "circle", "line", "polyline"]);
   const ATTRS = {
     "*": ["class"],
     a: ["href", "target", "rel"],
     svg: ["viewBox", "aria-hidden"],
     path: ["d"],
-    rect: ["x", "y", "width", "height", "rx"],
+    rect: ["x", "y", "width", "height", "rx", "ry"],
     circle: ["cx", "cy", "r"],
+    line: ["x1", "y1", "x2", "y2"],
+    polyline: ["points"],
   };
 
   function clean(node) {

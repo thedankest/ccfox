@@ -10,20 +10,22 @@
   <div class="app" id="app">
     <header class="toolbar">
       <button class="chat-switch" id="btnHistory" aria-haspopup="dialog" title="Chats (Alt+H)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
         <span class="chat-title" id="chatTitle">New chat</span>
-        <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg>
+        <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </button>
       <div class="toolbar-actions">
         <button class="icon-btn" id="btnNew" aria-label="New chat" title="New chat (Alt+N)">
-          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 8v6"/><path d="M9 11h6"/></svg>
         </button>
         <button class="icon-btn" id="btnSettings" aria-label="Settings" title="Settings">
-          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.4"/><path d="M10 2.8v2M10 15.2v2M2.8 10h2M15.2 10h2M4.9 4.9l1.4 1.4M13.7 13.7l1.4 1.4M4.9 15.1l1.4-1.4M13.7 6.3l1.4-1.4"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
     </header>
 
     <div class="banner" id="banner" role="alert" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
       <p class="banner-text"><strong id="bannerTitle"></strong> <span id="bannerText"></span></p>
       <div class="banner-actions">
         <button class="btn small" id="btnReconnect">Reconnect</button>
@@ -44,7 +46,7 @@
           <p class="empty-hint" id="emptyHint">Type <kbd>/</kbd> for your skills, plugins and agents.</p>
         </section>
         <ol class="transcript" id="messages"></ol>
-        <div class="thinking" id="thinking" hidden><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Thinking</span></div>
+        <div class="thinking" id="thinking" hidden><span class="orb" aria-hidden="true"><i></i><i></i><i></i></span><span>Thinking</span></div>
       </div>
     </main>
 
@@ -61,9 +63,9 @@
       </div>
       <p class="recbar-last" id="recLast" hidden></p>
       <div class="recbar-actions" id="recActions">
-        <button class="btn small" id="btnRecPause">Pause</button>
+        <button class="btn small" id="btnRecPause"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></svg><span>Pause</span></button>
         <button class="btn small ghost" id="btnRecCancel">Cancel</button>
-        <button class="btn small primary" id="btnRecStop">Stop and review</button>
+        <button class="btn small primary" id="btnRecStop"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/></svg><span>Stop and review</span></button>
       </div>
     </section>
 
@@ -81,30 +83,30 @@
               <option value="site">Always allowed</option>
               <option value="auto">Acts without asking</option>
             </select>
-            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg>
+            <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </label>
         </div>
         <div class="box" id="box">
           <div class="picker" id="picker" hidden>
-            <div class="picker-head"><span id="pickerTitle">Skills and commands</span><span class="picker-keys">↑↓ to choose · Enter to insert</span></div>
+            <div class="picker-head"><span class="picker-title"><svg class="pk-slash" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 2 22"/></svg><svg class="pk-at" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg><span id="pickerTitle">Skills and commands</span></span><span class="picker-keys"><kbd>↑</kbd><kbd>↓</kbd><span>choose</span><kbd>Enter</kbd><span>insert</span></span></div>
             <div class="picker-list" id="pickerList" role="listbox" aria-label="Skills, commands and agents"></div>
           </div>
           <div class="popover attach-menu" id="attachMenu" role="menu" aria-label="Add to your message" hidden>
             <button class="menu-item" role="menuitem" id="miUpload" tabindex="-1">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 9.5 9 14a3 3 0 0 1-4.2-4.2l5.3-5.3a2 2 0 0 1 2.8 2.8l-5.2 5.2a1 1 0 0 1-1.4-1.4L11 6.4"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></svg>
               <span class="mi-text"><span>Upload files</span><span class="mi-sub">Images, PDFs, text, anything</span></span>
             </button>
             <button class="menu-item" role="menuitem" id="miShot" tabindex="-1">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2M13 3.5h2A1.5 1.5 0 0 1 16.5 5v2M16.5 13v2a1.5 1.5 0 0 1-1.5 1.5h-2M7 16.5H5A1.5 1.5 0 0 1 3.5 15v-2"/><circle cx="10" cy="10" r="2.3"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/></svg>
               <span class="mi-text"><span>Screenshot of this tab</span><span class="mi-sub" id="miShotSub">What you see right now</span></span>
             </button>
             <button class="menu-item" role="menuitem" id="miTabs" tabindex="-1" aria-haspopup="dialog">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="6.5" width="10" height="9" rx="1.5"/><path d="M6.5 4h8.5A1.5 1.5 0 0 1 16.5 5.5V13"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/></svg>
               <span class="mi-text"><span>Add tabs as context</span><span class="mi-sub">Claude can read the tabs you pick</span></span>
             </button>
             <div class="menu-sep" role="separator"></div>
             <button class="menu-item" role="menuitem" id="miRecord" tabindex="-1">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><circle class="rec-fill" cx="10" cy="10" r="3"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="12" r="10"/></svg>
               <span class="mi-text"><span>Record a workflow</span><span class="mi-sub">Show Claude a task once; save it as a skill</span></span>
             </button>
           </div>
@@ -119,22 +121,22 @@
           <input type="file" id="fileInput" multiple hidden tabindex="-1" aria-hidden="true">
           <div class="box-row">
             <button class="tool-btn" id="btnAttach" aria-label="Add files, a screenshot or tabs" aria-haspopup="menu" aria-expanded="false" aria-controls="attachMenu" title="Add files, a screenshot or tabs">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
             </button>
             <button class="tool-btn" id="btnSlash" aria-label="Skills, plugins and agents" title="Skills, plugins and agents (/)">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 7.5 16"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 2 22"/></svg>
             </button>
             <label class="model" title="Model">
               <span class="visually-hidden">Model</span>
               <select id="model"><option value="">Default model</option></select>
-              <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg>
+              <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </label>
             <span class="queued" id="queued" hidden>1 queued</span>
             <button class="send" id="btnSend" aria-label="Send" title="Send (Enter)">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
             </button>
             <button class="send stop" id="btnStop" aria-label="Stop Claude" title="Stop (Esc)" hidden>
-              <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="6" width="8" height="8" rx="1.5"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
             </button>
           </div>
         </div>
@@ -142,7 +144,7 @@
     </footer>
     <div class="drop-hint" id="dropHint" hidden aria-hidden="true">
       <div class="drop-card">
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13.5V4M6 8l4-4 4 4M4 13.5v1A1.5 1.5 0 0 0 5.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-1"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
         <span>Drop to attach</span>
         <span class="drop-sub">Up to 10 files, 20 MB each</span>
       </div>
@@ -153,10 +155,10 @@
     <div class="sheet-head">
       <h2 id="historyTitle">Chats</h2>
       <button class="icon-btn" data-close aria-label="Close chats">
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
-    <input class="search" id="historySearch" type="search" placeholder="Search chats" aria-label="Search chats">
+    <div class="search-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input class="search" id="historySearch" type="search" placeholder="Search chats" aria-label="Search chats"></div>
     <ul class="history" id="historyList"></ul>
   </div>
 
@@ -164,7 +166,7 @@
     <div class="sheet-head">
       <h2 id="settingsTitle">Settings</h2>
       <button class="icon-btn" data-close aria-label="Close settings">
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
     <fieldset class="group">
@@ -185,7 +187,7 @@
       <h3>Your Claude Code</h3>
       <label class="field-row">
         <span>Model</span>
-        <span class="model settings-model"><select id="settingsModel"><option value="">Default model</option></select><svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg></span>
+        <span class="model settings-model"><select id="settingsModel"><option value="">Default model</option></select><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
       </label>
       <dl class="facts" id="facts"></dl>
       <div class="row-actions">
@@ -215,7 +217,7 @@
     <div class="sheet-head">
       <h2 id="reviewTitle">Save your workflow</h2>
       <button class="icon-btn" data-close aria-label="Close. Your recording stays until you save or discard it.">
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
     <p class="sheet-sub" id="reviewSub">It becomes one of your skills. Run it with its command here, or in any Claude Code session that has ccfox.</p>
