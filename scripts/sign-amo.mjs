@@ -139,6 +139,7 @@ if (!Array.isArray(listing.categories) || !listing.categories.length) fail("amo-
 if (!listing.version || !listing.version.license) fail("amo-metadata.json: version.license is required.");
 // Reviewer notes travel as the version's approval notes (visible to Mozilla only).
 const approvalNotes = fs.readFileSync(REVIEWER_NOTES, "utf8").trim();
+if (approvalNotes.length > 3000) fail(`store/reviewer-notes.md is ${approvalNotes.length} characters; AMO allows 3000.`);
 // An unlisted version needs no listing; send only the version fields.
 const metadata = channel === "listed" ? structuredClone(listing) : { version: structuredClone(listing.version) };
 metadata.version.approval_notes = approvalNotes;
@@ -191,9 +192,14 @@ function keychain(account) {
     fail(`No Keychain item for service "${KEYCHAIN_SERVICE}", account "${account}". Add it with:\n  security add-generic-password -s ${KEYCHAIN_SERVICE} -a ${account} -w`);
   }
 }
-const apiKey = keychain("jwt-issuer");
-const apiSecret = keychain("jwt-secret");
+// Terminals that report focus (ESC [ I / ESC [ O) or bracketed paste (ESC [ 200~ ... ESC [ 201~)
+// leak those codes into `security ... -w` prompts, so strip control sequences, quotes and spaces.
+const clean = (v) => v.replace(/\x1b\[[0-9;]*[A-Za-z~]/g, "").replace(/[\x00-\x1f\x7f\s"']/g, "");
+const apiKey = clean(keychain("jwt-issuer"));
+const apiSecret = clean(keychain("jwt-secret"));
 if (!apiKey || !apiSecret) fail("The Keychain items are empty.");
+if (!/^user:\d+:\d+$/.test(apiKey)) fail(`jwt-issuer should look like user:12345678:123. Re-save it with:\n  security add-generic-password -U -s ${KEYCHAIN_SERVICE} -a jwt-issuer -w`);
+if (!/^[0-9a-f]{64}$/.test(apiSecret)) fail(`jwt-secret should be 64 hex characters (got ${apiSecret.length}). Re-save it with:\n  security add-generic-password -U -s ${KEYCHAIN_SERVICE} -a jwt-secret -w`);
 console.log("found jwt-issuer and jwt-secret");
 
 step(`web-ext sign (${channel})`);
