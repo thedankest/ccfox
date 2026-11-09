@@ -46,7 +46,9 @@ function connect() {
     Chat.onConnection();
     scheduleReconnect();
   });
-  port.postMessage({ type: "hello", version: browser.runtime.getManifest().version });
+  // `tools` tells the host which tools this build implements (the AMO build has no
+  // javascript_exec), so side-panel chats aren't offered tools that can't work.
+  port.postMessage({ type: "hello", version: browser.runtime.getManifest().version, tools: Object.keys(TOOLS) });
 }
 
 function scheduleReconnect() {
@@ -100,7 +102,7 @@ async function onHostMessage(msg) {
   const { id, clientId, chatId, tool, args } = msg;
   try {
     const handler = TOOLS[tool];
-    if (!handler) throw new Error(`Unknown tool: ${tool}`);
+    if (!handler) throw new Error(tool === "javascript_exec" ? JS_EXEC_UNAVAILABLE : `Unknown tool: ${tool}`);
     const result = await handler(args || {}, { clientId, chatId });
     send({ type: "response", id, ok: true, result });
   } catch (e) {
@@ -191,12 +193,19 @@ function syncConsoleHook() {
   return hookChain;
 }
 
+// Is content/agent.js already in the tab's top frame? It answers "ping"; a tab without
+// it has no listener (rejects) or only the overlay/recorder ones (resolve undefined).
+async function agentPresent(tabId) {
+  try {
+    const res = await browser.tabs.sendMessage(tabId, { zc: true, cmd: "ping" }, { frameId: 0 });
+    return !!(res && res.result && res.result.ok);
+  } catch {
+    return false;
+  }
+}
+
 async function ensureAgent(tabId) {
-  const [present] = await browser.tabs.executeScript(tabId, {
-    code: "typeof globalThis.__zcAgent === 'object'",
-    runAt: "document_start",
-  });
-  if (present) return;
+  if (await agentPresent(tabId)) return;
   await browser.tabs.executeScript(tabId, { file: "/content/console-hook.js", runAt: "document_start" }).catch(() => {});
   await browser.tabs.executeScript(tabId, { file: "/content/naming.js", runAt: "document_end" });
   await browser.tabs.executeScript(tabId, { file: "/content/agent.js", runAt: "document_end" });
@@ -470,50 +479,6 @@ const TOOLS = {
     }
   },
 
-  async javascript_exec(args, ctx) {
-    const tab = await resolveTab(args, ctx);
-    const code = String(args.code || "");
-    if (!code.trim()) throw new Error("javascript_exec needs code.");
-    const wrap = (body) => `(async () => {
-  const __ser = (v) => {
-    if (v === undefined) return "undefined";
-    if (typeof v === "function") return "[Function]";
-    if (v && typeof v.nodeType === "number") return v.outerHTML ? v.outerHTML.slice(0, 5000) : "[" + v.nodeName + "]";
-    if (typeof v === "string") return JSON.stringify(v);
-    const seen = new WeakSet();
-    try {
-      return JSON.stringify(v, (k, x) => {
-        if (typeof x === "bigint") return x.toString() + "n";
-        if (x && typeof x === "object") { if (seen.has(x)) return "[Circular]"; seen.add(x); if (typeof x.nodeType === "number") return "<" + (x.nodeName || "").toLowerCase() + ">"; }
-        return x;
-      }, 2);
-    } catch (e) { return String(v); }
-  };
-  try {
-    const __v = await (async () => {${body}
-    })();
-    return { ok: true, value: __ser(__v) };
-  } catch (e) {
-    return { ok: false, error: (e && e.stack) ? String(e) + "\\n" + e.stack : String(e) };
-  }
-})();`;
-    let res;
-    try {
-      // Expression form first, so `document.title` returns its value REPL-style.
-      [res] = await browser.tabs.executeScript(tab.id, { code: wrap(`return (${code.replace(/;\s*$/, "")}\n);`) });
-    } catch (e) {
-      // Runtime errors are caught inside the wrapper, so a rejection here means the
-      // expression form didn't compile (statements) or the page can't be scripted.
-      if (/Missing host permission|Cannot access|not allowed/i.test(String(e && e.message))) throw e;
-      [res] = await browser.tabs.executeScript(tab.id, { code: wrap(code) });
-    }
-    if (!res) return { text: "undefined" };
-    if (!res.ok) throw new Error(`Script threw: ${res.error}`);
-    let v = res.value;
-    if (v.length > 50000) v = v.slice(0, 50000) + "\n[truncated]";
-    return { text: v };
-  },
-
   async read_console_messages(args, ctx) {
     const tab = await resolveTab(args, ctx);
     return agent(tab.id, "console", args);
@@ -556,6 +521,15 @@ const TOOLS = {
     return { text: `Released ${n} tab(s). Console/network capture stops after their next navigation.` };
   },
 };
+
+// javascript_exec exists only in the developer build, which loads js-exec.js.
+const JS_EXEC_UNAVAILABLE =
+  "javascript_exec isn't available in this build of ccfox. The addons.mozilla.org build can't run JavaScript written at runtime (Mozilla's add-on policies only allow code shipped inside the add-on). " +
+  "Use read_page, find, get_page_text, read_console_messages, computer and form_input instead. " +
+  "If the user needs it, they can install the developer build of the extension from https://github.com/thedankest/ccfox (see the README).";
+if (typeof JsExec !== "undefined") {
+  TOOLS.javascript_exec = async (args, ctx) => JsExec.run(await resolveTab(args, ctx), args.code);
+}
 
 // ------------------------------------------------------------------ toolbar button
 browser.browserAction.onClicked.addListener(() => {

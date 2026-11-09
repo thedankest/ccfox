@@ -88,6 +88,17 @@
       return !!host && el === host;
     },
   };
+
+  // highlight.js drives the overlay with messages (no code strings are injected).
+  browser.runtime.onMessage.addListener((msg) => {
+    if (!msg || !msg.ccfoxOverlay) return undefined;
+    const { op, opts, on } = msg.ccfoxOverlay;
+    const overlay = globalThis.__ccfoxOverlay;
+    if (op === "show") overlay.show(opts);
+    else if (op === "hide") overlay.hide();
+    else if (op === "suspend") overlay.suspend(!!on);
+    return Promise.resolve(true);
+  });
 })();
 
 // "Recording your steps" pill, shown while the user records a workflow. Deliberately

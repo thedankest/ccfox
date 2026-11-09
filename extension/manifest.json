@@ -1,15 +1,20 @@
 {
   "manifest_version": 2,
   "name": "ccfox",
-  "version": "0.6.0",
-  "description": "Claude Code in your Zen/Firefox side panel, and browser control for Claude Code. Runs your local Claude Code; nothing listens on the network.",
+  "version": "0.7.0",
+  "description": "Claude Code in your Zen/Firefox side panel, and browser control for Claude Code. Needs the ccfox helper and Claude Code installed on your computer. Unofficial; not made by Anthropic.",
+  "author": "thedankest",
+  "homepage_url": "https://github.com/thedankest/ccfox",
   "browser_specific_settings": {
     "gecko": {
-      "id": "ccfox@local",
+      "id": "ccfox@thedankest",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": [
-          "none"
+          "websiteContent",
+          "browsingActivity",
+          "websiteActivity",
+          "personalCommunications"
         ]
       }
     }
@@ -23,11 +28,13 @@
     "webNavigation",
     "storage"
   ],
+  "incognito": "not_allowed",
   "background": {
     "scripts": [
       "chat.js",
       "highlight.js",
       "workflow.js",
+      "js-exec.js",
       "background.js"
     ],
     "persistent": true

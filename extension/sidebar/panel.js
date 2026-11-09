@@ -299,21 +299,21 @@ function buildBlock(b, key, ctx) {
     case "assistant": {
       const li = el("li", "msg-assistant");
       const body = el("div", "md");
-      body.innerHTML = Markdown.render(it.text); // the renderer escapes everything first
+      SafeHTML.set(body, Markdown.render(it.text)); // the renderer escapes everything first
       const actions = el("div", "msg-actions");
       const copy = el("button", "msg-act");
-      copy.innerHTML = ICON.copy;
+      SafeHTML.set(copy, ICON.copy);
       copy.setAttribute("aria-label", "Copy reply");
       copy.title = "Copy reply";
       const index = b.idx[0];
       copy.addEventListener("click", async () => {
         try {
           await navigator.clipboard.writeText((ui.chat.items[index] || it).text);
-          copy.innerHTML = ICON.done;
+          SafeHTML.set(copy, ICON.done);
           copy.classList.add("done");
           announce("Copied the reply.");
           setTimeout(() => {
-            copy.innerHTML = ICON.copy;
+            SafeHTML.set(copy, ICON.copy);
             copy.classList.remove("done");
           }, 1400);
         } catch {
@@ -352,7 +352,7 @@ function buildBlock(b, key, ctx) {
 
 function statusIcon(item) {
   const s = el("span", `status ${item.status} ${item.kind || ""}`);
-  s.innerHTML = ICON[item.status] || "";
+  SafeHTML.set(s, ICON[item.status] || "");
   s.setAttribute("role", "img");
   s.setAttribute("aria-label", STATUS_WORDS[item.status] || item.status);
   return s;
@@ -378,7 +378,7 @@ function buildSteps(b, key, items) {
     head.setAttribute("aria-expanded", String(open));
     head.append(statusIcon(latest), el("span", "now", latest.summary));
     head.append(el("span", "count", `${items.length} steps${actions ? ` · ${actions} action${actions > 1 ? "s" : ""}` : ""}`));
-    head.insertAdjacentHTML("beforeend", ICON.chev);
+    SafeHTML.append(head, ICON.chev);
     head.addEventListener("click", () => {
       if (ui.openGroups.has(key)) ui.openGroups.delete(key);
       else ui.openGroups.add(key);
@@ -580,7 +580,7 @@ function renderTarget() {
   const site = ui.activeTab ? siteOf(ui.activeTab.url) : null;
   $("emptyTitle").textContent = site ? `What should Claude do on ${site}?` : "What should Claude do here?";
   const n = (ui.catalog.commands || []).filter((c) => !c.builtin).length + (ui.catalog.agents || []).length;
-  $("emptyHint").innerHTML = `Type <kbd>/</kbd> for your ${n ? n + " " : ""}skills, plugins and agents. Drop files here to attach them.`;
+  $("emptyHint").replaceChildren("Type ", el("kbd", null, "/"), ` for your ${n ? n + " " : ""}skills, plugins and agents. Drop files here to attach them.`);
 }
 
 // ------------------------------------------------------------------ models
@@ -860,7 +860,7 @@ function renderHistory() {
     const del = el("button", "icon-btn");
     del.setAttribute("aria-label", `Delete “${h.title}”`);
     del.title = "Delete";
-    del.innerHTML = ICON.trash;
+    SafeHTML.set(del, ICON.trash);
     del.addEventListener("click", () => deleteChat(h));
     li.append(open, del);
     list.append(li);
@@ -1207,7 +1207,7 @@ function renderAttachments() {
     const text = el("span", "att-text");
     text.append(el("span", "att-name", name), el("span", "att-meta", meta));
     const x = el("button", "att-x");
-    x.innerHTML = ICON.x;
+    SafeHTML.set(x, ICON.x);
     x.dataset.key = key;
     x.setAttribute("aria-label", `Remove ${label}`);
     x.title = "Remove";
@@ -1224,7 +1224,7 @@ function renderAttachments() {
       thumb.alt = "";
     } else {
       thumb = el("span", "att-icon");
-      thumb.innerHTML = ICON.file;
+      SafeHTML.set(thumb, ICON.file);
     }
     add(a.thumb ? "image" : "file", thumb, a.name, `${kindLabel(a)} · ${fmtSize(a.size)}`, `file:${a.id}`, a.name);
   }
@@ -1248,7 +1248,7 @@ function sentAttachments(it) {
       li.title = a.error ? `${a.name}: not saved (${a.error})` : a.path || a.name;
     } else {
       const ic = el("span", "att-icon");
-      ic.innerHTML = ICON.file;
+      SafeHTML.set(ic, ICON.file);
       li.append(ic, el("span", "sa-name", a.name), el("span", "sa-meta", a.error ? "not saved" : fmtSize(a.size || 0)));
       li.title = a.error ? `Not saved: ${a.error}` : a.path || a.name;
     }
@@ -1666,7 +1666,7 @@ function renderReviewSteps() {
     body.append(text);
     if (s.sensitive) {
       const lock = el("span", "wf-lock");
-      lock.innerHTML = ICON.lock;
+      SafeHTML.set(lock, ICON.lock);
       lock.append(el("span", "", "Never stored · Claude asks you each time"));
       body.append(lock);
     } else if (s.canAsk) {
@@ -1674,7 +1674,7 @@ function renderReviewSteps() {
       ask.dataset.role = "ask";
       ask.setAttribute("aria-pressed", String(!!s.ask));
       ask.setAttribute("aria-describedby", text.id);
-      ask.innerHTML = ICON.ask;
+      SafeHTML.set(ask, ICON.ask);
       ask.append(el("span", "", s.ask ? "Asks each time" : "Ask each time"));
       ask.title = s.ask ? "Claude asks you for this value each time. Click to keep the recorded value instead." : "Don't save this value; Claude asks you for it each time";
       ask.addEventListener("click", () => {
@@ -1685,7 +1685,7 @@ function renderReviewSteps() {
     }
     const del = el("button", "icon-btn");
     del.dataset.role = "del";
-    del.innerHTML = ICON.trash;
+    SafeHTML.set(del, ICON.trash);
     del.title = "Delete this step";
     del.setAttribute("aria-label", `Delete step ${i + 1}: ${s.text}`);
     del.addEventListener("click", () => {

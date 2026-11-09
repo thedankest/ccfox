@@ -1,9 +1,39 @@
 // Browser tool definitions shared by both MCP servers that expose them:
 //  - server/mcp-server.mjs, the stdio server Claude Code sessions register as "ccfox";
 //  - the in-process "browser" server the native host gives each side-panel chat.
-// Each tool is { name, description, shape (zod raw shape), timeoutMs, readOnly }.
+// Both are built by createBrowserServer() below, so they carry the same server info
+// (title, version, website, icon) and the same per-tool titles and annotations.
+// Each tool is { name, title, description, shape (zod raw shape), timeoutMs, readOnly, hints }.
 // The extension (extension/background.js) implements them under the same names.
+import fs from "node:fs";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+
+// ../package.json sits next to server/ both in the repo and in ~/.ccfox/app.
+export const VERSION = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
+export const WEBSITE_URL = "https://github.com/thedankest/ccfox";
+
+// The fox icon as a data: URI (MCP 2025-11-25 Implementation.icons). The installer
+// copies docs/icon.png next to this file; in the repo it is read from docs/.
+function loadIcons() {
+  for (const rel of ["./icon.png", "../docs/icon.png"]) {
+    try {
+      const data = fs.readFileSync(new URL(rel, import.meta.url));
+      return [{ src: `data:image/png;base64,${data.toString("base64")}`, mimeType: "image/png", sizes: ["512x512"] }];
+    } catch {}
+  }
+  return undefined;
+}
+
+/** MCP serverInfo for a ccfox server named `name`. */
+export const serverInfo = (name) => ({
+  name,
+  title: "ccfox",
+  version: VERSION,
+  description: "Drives your real Zen or Firefox browser (your own profile, tabs and logins) through the ccfox extension: read pages, click, type, fill forms and take screenshots. Unofficial; not affiliated with Anthropic.",
+  websiteUrl: WEBSITE_URL,
+  icons: loadIcons(),
+});
 
 export const INSTRUCTIONS = [
   "These tools drive the user's real Zen/Firefox browser through the ccfox extension: their own profile, cookies and logged-in sites.",
@@ -20,12 +50,44 @@ const tabId = z.number().int().optional().describe("Tab to act on. Defaults to t
 
 export const TOOLS = [];
 
-function def(name, description, shape, { timeoutMs = DEFAULT_TIMEOUT_MS, readOnly = false } = {}) {
-  TOOLS.push({ name, description, shape, timeoutMs, readOnly });
+// hints: the MCP behaviour hints. Read-only tools default to { idempotent, closed world };
+// tools that change something must state them.
+function def(name, title, description, shape, { timeoutMs = DEFAULT_TIMEOUT_MS, readOnly = false, destructive = false, idempotent = readOnly, openWorld = false } = {}) {
+  TOOLS.push({ name, title, description, shape, timeoutMs, readOnly, hints: { destructive, idempotent, openWorld } });
 }
 
-/** MCP tool annotations for a tool definition. */
-export const annotationsOf = (t) => ({ readOnlyHint: t.readOnly, openWorldHint: true });
+/**
+ * MCP tool annotations for a tool definition. openWorldHint marks tools that can make the
+ * page talk to websites (loading URLs, clicking, typing, running page scripts); tools that
+ * only read what is already in the browser are a closed world.
+ */
+export const annotationsOf = (t) => ({
+  title: t.title,
+  readOnlyHint: t.readOnly,
+  destructiveHint: t.hints.destructive,
+  idempotentHint: t.hints.idempotent,
+  openWorldHint: t.hints.openWorld,
+});
+
+/**
+ * An MCP server exposing the browser tools. `call(tool, args)` runs one in the browser
+ * and resolves to the extension's result. `only`, if given, limits it to those tool names
+ * (the AMO build of the extension has no javascript_exec).
+ */
+export function createBrowserServer({ name, call, only }) {
+  const server = new McpServer(serverInfo(name), { instructions: INSTRUCTIONS });
+  for (const t of TOOLS) {
+    if (only && !only.includes(t.name)) continue;
+    server.registerTool(t.name, { title: t.title, description: t.description, inputSchema: t.shape, annotations: annotationsOf(t) }, async (args) => {
+      try {
+        return toContent(await call(t, args));
+      } catch (e) {
+        return errorContent(e);
+      }
+    });
+  }
+  return server;
+}
 
 /** Names of the read-only tools (the side panel pre-approves these). */
 export const READ_ONLY_TOOLS = () => TOOLS.filter((t) => t.readOnly).map((t) => t.name);
@@ -48,6 +110,7 @@ export const timeoutMessage = (tool, timeoutMs) =>
 
 def(
   "tabs_context",
+  "List tabs",
   "List the browser's tabs with their tabIds, URLs and titles, and which one is this session's current tab. Call this first.",
   {
     all_windows: z.boolean().optional().describe("List tabs from all windows (default true). false = only the last focused window."),
@@ -58,20 +121,23 @@ def(
 
 def(
   "tabs_create",
+  "Open a new tab",
   "Open a new tab (optionally at a URL, waiting for it to load). It becomes this session's current tab, so later tools act on it by default.",
   {
     url: z.string().optional().describe("URL to open. Scheme optional (localhost gets http://, others https://)."),
     active: z.boolean().optional().describe("Bring the tab to the front (default true). Background tabs can render slowly."),
   },
-  { timeoutMs: 30000 },
+  { timeoutMs: 30000, openWorld: true },
 );
 
-def("tabs_select", "Bring a tab to the front and make it this session's current tab.", { tabId: z.number().int() });
+def("tabs_select", "Switch to tab", "Bring a tab to the front and make it this session's current tab.", { tabId: z.number().int() }, { idempotent: true });
 
-def("tabs_close", "Close a tab.", { tabId: z.number().int() });
+// Destructive: closing a tab discards its page state (unsaved input, scroll, history).
+def("tabs_close", "Close tab", "Close a tab.", { tabId: z.number().int() }, { destructive: true, idempotent: true });
 
 def(
   "navigate",
+  "Navigate tab",
   "Navigate a tab to a URL, or go 'back' / 'forward' / 'reload'. Waits for the page to finish loading.",
   {
     url: z.string().describe("URL, or 'back', 'forward', 'reload'."),
@@ -79,11 +145,12 @@ def(
     bypass_cache: z.boolean().optional().describe("For reload: bypass the cache."),
     timeout_ms: z.number().int().optional().describe("Max time to wait for load (default 20000)."),
   },
-  { timeoutMs: 65000 },
+  { timeoutMs: 65000, openWorld: true },
 );
 
 def(
   "read_page",
+  "Read page outline",
   "Read the page as an accessibility-style outline. Each element gets a ref_N handle usable with computer (ref), form_input and scroll_to. Refs stay valid until the element leaves the page. Prefer this over screenshots to understand structure.",
   {
     tabId,
@@ -98,6 +165,7 @@ def(
 
 def(
   "find",
+  "Find elements",
   "Find elements whose role, name, value or href contains the query (case-insensitive). Returns up to `limit` matching outline lines with refs.",
   {
     query: z.string().describe("Text to look for, e.g. 'Sign in', 'search', 'checkout button'."),
@@ -109,6 +177,7 @@ def(
 
 def(
   "get_page_text",
+  "Get page text",
   "Get the page's visible text (main/article content if present, else the body), with title and URL.",
   { tabId, max_chars: z.number().int().optional().describe("Default 50000.") },
   { readOnly: true },
@@ -116,6 +185,7 @@ def(
 
 def(
   "computer",
+  "Click, type or screenshot",
   [
     "Mouse/keyboard/screenshot actions in a tab.",
     "- screenshot: image of the viewport; image pixels = CSS px = click coordinates.",
@@ -146,28 +216,33 @@ def(
     duration: z.number().optional().describe("For wait: seconds."),
     repeat: z.number().int().min(1).max(100).optional().describe("For key: how many times to repeat."),
   },
-  { timeoutMs: 45000 },
+  { timeoutMs: 45000, destructive: true, openWorld: true },
 );
 
 def(
   "form_input",
+  "Fill form field",
   "Set a form field's value directly by ref: text inputs/textareas/contenteditable (replaces content), <select> (option value or visible text; array for multi-select), checkboxes/radios/switches (true/false), range/date/color inputs.",
   {
     ref: z.string().describe("Element ref from read_page/find."),
     value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]),
     tabId,
   },
+  // Replaces what the field held; the page's own handlers may save or act on the change.
+  { destructive: true, idempotent: true, openWorld: true },
 );
 
 def(
   "javascript_exec",
-  "Run JavaScript in the tab and return the result (JSON-serialized). A single expression returns its value (e.g. `document.title`); for multiple statements use `return`. `await` works. Runs in the extension's content-script sandbox with full DOM access; the page's own JS globals are under `window.wrappedJSObject`. Not subject to the page's CSP. For debugging/inspection, not for changing the user's sites.",
+  "Run JavaScript in page",
+  "Run JavaScript in the tab and return the result (JSON-serialized). A single expression returns its value (e.g. `document.title`); for multiple statements use `return`. `await` works. Runs in the extension's content-script sandbox with full DOM access; the page's own JS globals are under `window.wrappedJSObject`. Not subject to the page's CSP. For debugging/inspection, not for changing the user's sites. Only in the developer build of the ccfox extension: the addons.mozilla.org build doesn't have it.",
   { code: z.string(), tabId },
-  { timeoutMs: 60000 },
+  { timeoutMs: 60000, destructive: true, openWorld: true },
 );
 
 def(
   "read_console_messages",
+  "Read console messages",
   "Read console output (log/info/warn/error/debug) and uncaught errors from the tab's current page. Capture starts when Claude first touches a tab and restarts with each page load.",
   {
     tabId,
@@ -181,6 +256,7 @@ def(
 
 def(
   "read_network_requests",
+  "Read network requests",
   "List network requests made by the tab (method, status, type, duration, URL) since Claude first touched it. No bodies.",
   {
     tabId,
@@ -194,12 +270,16 @@ def(
 
 def(
   "resize_window",
+  "Resize window",
   "Resize the browser window containing the tab (outer size in px), e.g. to test responsive layouts.",
   { width: z.number().int(), height: z.number().int(), tabId },
+  { idempotent: true },
 );
 
 def(
   "release_tabs",
+  "Release Claude's tabs",
   "Stop treating tabs as Claude's: ends console/network capture (after their next navigation) and clears this session's current tab.",
   {},
+  { idempotent: true },
 );

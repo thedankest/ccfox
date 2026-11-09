@@ -4,9 +4,8 @@
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { INSTRUCTIONS, TOOLS, annotationsOf, errorContent, timeoutMessage, toContent } from "./tools.mjs";
+import { createBrowserServer, timeoutMessage } from "./tools.mjs";
 
 const HOME = process.env.CCFOX_HOME || path.join(os.homedir(), ".ccfox");
 const SOCK = path.join(HOME, "bridge.sock");
@@ -96,17 +95,10 @@ class Bridge {
 const bridge = new Bridge();
 
 // ------------------------------------------------------------------ MCP tools
-// Definitions live in tools.mjs, shared with the side panel's in-process server.
-const server = new McpServer({ name: "ccfox", version: "0.1.0" }, { instructions: INSTRUCTIONS });
-
-for (const t of TOOLS) {
-  server.registerTool(t.name, { description: t.description, inputSchema: t.shape, annotations: annotationsOf(t) }, async (args) => {
-    try {
-      return toContent(await bridge.call(t.name, args, t.timeoutMs));
-    } catch (e) {
-      return errorContent(e);
-    }
-  });
-}
+// Definitions, titles, annotations and server info live in tools.mjs, shared with the
+// side panel's in-process server. All tools are listed here: this server starts before
+// it knows which extension build is connected, so a tool the build lacks (javascript_exec
+// in the AMO build) answers with an error that says why.
+const server = createBrowserServer({ name: "ccfox", call: (t, args) => bridge.call(t.name, args, t.timeoutMs) });
 
 await server.connect(new StdioServerTransport());

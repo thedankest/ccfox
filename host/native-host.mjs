@@ -30,7 +30,13 @@ const HOME = process.env.CCFOX_HOME || path.join(os.homedir(), ".ccfox");
 const SOCK = path.join(HOME, "bridge.sock");
 const LOG = path.join(HOME, "host.log");
 const CONFIG = path.join(HOME, "config.json");
-const VERSION = "0.6.0";
+const VERSION = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version; // the installer copies it
+  } catch {
+    return "0.0.0";
+  }
+})();
 const MAX_TO_BROWSER = 1024 * 1024; // Firefox limit for host -> extension messages
 
 fs.mkdirSync(HOME, { recursive: true, mode: 0o700 });
@@ -92,11 +98,13 @@ function toBrowser(obj) {
 }
 
 let browserVersion = null;
+let browserTools = null; // tool names the connected extension build implements
 
 function onBrowserMessage(msg) {
   switch (msg.type) {
     case "hello":
       browserVersion = msg.version;
+      browserTools = Array.isArray(msg.tools) ? msg.tools : null;
       log("extension connected", msg.version);
       broadcastClientCount();
       toBrowser({ type: "host.info", hostVersion: VERSION, claude: findClaude() || null });
@@ -254,27 +262,17 @@ function loadSdk() {
   return sdkPromise;
 }
 
-function browserMcpServer({ sdk, tools }, chatId) {
-  return sdk.createSdkMcpServer({
+// An McpSdkServerConfigWithInstance built from our own McpServer (tools.mjs) rather than
+// sdk.createSdkMcpServer(), which only passes a name and version through: this way the
+// in-process server reports the same serverInfo (title, website, icon) and per-tool
+// titles as the stdio server. Tools the connected extension build lacks are left out.
+function browserMcpServer({ tools }, chatId) {
+  const instance = tools.createBrowserServer({
     name: "browser",
-    version: VERSION,
-    instructions: tools.INSTRUCTIONS,
-    tools: tools.TOOLS.map((t) =>
-      sdk.tool(
-        t.name,
-        t.description,
-        t.shape,
-        async (args) => {
-          try {
-            return tools.toContent(await callBrowser(chatId, t.name, args, t.timeoutMs, tools.timeoutMessage));
-          } catch (e) {
-            return tools.errorContent(e);
-          }
-        },
-        { annotations: tools.annotationsOf(t) },
-      ),
-    ),
+    only: browserTools || undefined,
+    call: (t, args) => callBrowser(chatId, t.name, args, t.timeoutMs, tools.timeoutMessage),
   });
+  return { type: "sdk", name: "browser", instance };
 }
 
 // ------------------------------------------------------------------ side-panel chats

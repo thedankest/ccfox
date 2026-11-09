@@ -311,4 +311,15 @@
       return true;
     },
   };
+
+  // workflow.js drives the recorder with messages (no code strings are injected).
+  browser.runtime.onMessage.addListener((msg) => {
+    if (!msg || !msg.ccfoxRecorder) return undefined;
+    const { op, paused: p } = msg.ccfoxRecorder;
+    const r = globalThis.__ccfoxRecorder;
+    if (op === "start") r.start({ paused: p });
+    else if (op === "pause") r.pause(p);
+    else if (op === "stop") r.stop();
+    return Promise.resolve(true);
+  });
 })();

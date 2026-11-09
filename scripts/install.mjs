@@ -9,7 +9,10 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const HOST_NAME = "ccfox";
-const EXT_ID = "ccfox@local";
+// The permanent add-on ID (the one on addons.mozilla.org), plus earlier IDs so installs
+// of older builds keep connecting until they update.
+const EXT_ID = "ccfox@thedankest";
+const LEGACY_EXT_IDS = ["ccfox@local"];
 const home = os.homedir();
 
 const manifestDirs =
@@ -52,6 +55,8 @@ for (const dir of ["host", "server"]) fs.mkdirSync(path.join(appDir, dir), { rec
 for (const f of ["host/native-host.mjs", "server/mcp-server.mjs", "server/tools.mjs", "package.json", "package-lock.json"]) {
   fs.copyFileSync(path.join(ROOT, f), path.join(appDir, f));
 }
+// The fox icon the MCP servers report in their serverInfo.
+fs.copyFileSync(path.join(ROOT, "docs/icon.png"), path.join(appDir, "server/icon.png"));
 execFileSync("npm", ["ci", "--omit=dev", "--omit=optional", "--no-audit", "--no-fund", "--loglevel=error"], { cwd: appDir, stdio: "inherit" });
 console.log(`runtime    ${appDir}`);
 
@@ -95,7 +100,7 @@ const manifest = {
   description: "ccfox: side-panel chats and Claude Code browser control",
   path: launcher,
   type: "stdio",
-  allowed_extensions: [EXT_ID],
+  allowed_extensions: [EXT_ID, ...LEGACY_EXT_IDS],
 };
 for (const d of manifestDirs) {
   fs.mkdirSync(d, { recursive: true });
@@ -121,6 +126,9 @@ Done. Next:
      click the gear icon > "Install Add-on From File…" and pick:
        ${xpi}
      The toolbar button (or Alt+Shift+C) opens the Claude side panel.
+     This is the developer build (it includes javascript_exec). Since 0.7.0 the add-on
+     ID is ${EXT_ID}; a copy installed before that (${LEGACY_EXT_IDS.join(", ")}) is a separate
+     add-on, so remove it from about:addons.
   2. Register the MCP server so Claude Code can drive Zen too:
        claude mcp add --scope user ccfox -- "${process.execPath}" "${server}"
 `);

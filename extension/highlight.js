@@ -18,14 +18,17 @@ const Highlight = (() => {
       : { chatId: null, label: "Claude Code is using this tab" };
     try {
       await browser.tabs.executeScript(tabId, { file: "/content/overlay.js", runAt: "document_end" });
-      await browser.tabs.executeScript(tabId, { code: `globalThis.__ccfoxOverlay && __ccfoxOverlay.show(${JSON.stringify(opts)})`, runAt: "document_end" });
+      await tell(tabId, { op: "show", opts });
     } catch {
       // privileged or closed tab: nothing to draw on
     }
   }
 
+  // Commands for content/overlay.js in the tab's top frame; a tab without it ignores them.
+  const tell = (tabId, cmd) => browser.tabs.sendMessage(tabId, { ccfoxOverlay: cmd }, { frameId: 0 }).catch(() => {});
+
   function unpaint(tabId) {
-    browser.tabs.executeScript(tabId, { code: "globalThis.__ccfoxOverlay && __ccfoxOverlay.hide()" }).catch(() => {});
+    tell(tabId, { op: "hide" });
   }
 
   // Called whenever a tool runs in a tab.
@@ -66,7 +69,7 @@ const Highlight = (() => {
   // Screenshots must show the page, not our glow.
   async function suspend(tabId, on) {
     if (!active.has(tabId)) return;
-    await browser.tabs.executeScript(tabId, { code: `globalThis.__ccfoxOverlay && __ccfoxOverlay.suspend(${on})` }).catch(() => {});
+    await tell(tabId, { op: "suspend", on });
     if (on) await new Promise((r) => setTimeout(r, 30));
   }
 

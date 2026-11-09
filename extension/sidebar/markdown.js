@@ -88,3 +88,46 @@ const Markdown = (() => {
 
   return { render };
 })();
+
+// Puts the renderer's output (and the panel's built-in SVG icons) into the page without
+// innerHTML: the string is parsed into an inert document, anything outside a small
+// allowlist of elements and attributes is dropped, links must be http(s), and only
+// then are the nodes moved into the panel.
+const SafeHTML = (() => {
+  const TAGS = new Set(["p", "br", "strong", "em", "code", "pre", "a", "ul", "ol", "li", "blockquote", "h3", "h4", "hr", "kbd", "svg", "path", "rect", "circle"]);
+  const ATTRS = {
+    "*": ["class"],
+    a: ["href", "target", "rel"],
+    svg: ["viewBox", "aria-hidden"],
+    path: ["d"],
+    rect: ["x", "y", "width", "height", "rx"],
+    circle: ["cx", "cy", "r"],
+  };
+
+  function clean(node) {
+    for (const child of [...node.childNodes]) {
+      if (child.nodeType === Node.TEXT_NODE) continue;
+      if (child.nodeType !== Node.ELEMENT_NODE || !TAGS.has(child.localName)) {
+        child.replaceWith(document.createTextNode(child.nodeType === Node.ELEMENT_NODE ? child.textContent : ""));
+        continue;
+      }
+      const ok = new Set([...ATTRS["*"], ...(ATTRS[child.localName] || [])]);
+      for (const attr of [...child.attributes]) if (!ok.has(attr.name)) child.removeAttribute(attr.name);
+      if (child.localName === "a") {
+        if (!/^https?:\/\//i.test(child.getAttribute("href") || "")) child.removeAttribute("href");
+        child.setAttribute("target", "_blank");
+        child.setAttribute("rel", "noopener noreferrer");
+      }
+      clean(child);
+    }
+    return node;
+  }
+
+  const parse = (html) => clean(new DOMParser().parseFromString(`<!doctype html><body>${html}`, "text/html").body);
+  const nodes = (html) => [...parse(String(html || "")).childNodes].map((n) => document.adoptNode(n));
+
+  return {
+    set: (el, html) => el.replaceChildren(...nodes(html)),
+    append: (el, html) => el.append(...nodes(html)),
+  };
+})();

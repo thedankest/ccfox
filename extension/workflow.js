@@ -64,13 +64,14 @@ const Workflow = (() => {
       for (const file of ["/content/overlay.js", "/content/naming.js", "/content/recorder.js"]) {
         await browser.tabs.executeScript(tabId, { file, runAt: "document_start" });
       }
-      await browser.tabs.executeScript(tabId, { code: `globalThis.__ccfoxRecorder.start(${JSON.stringify({ paused: rec.status === "paused" })})`, runAt: "document_start" });
+      await browser.tabs.sendMessage(tabId, { ccfoxRecorder: { op: "start", paused: rec.status === "paused" } }, { frameId: 0 });
     } catch {
       // about:, view-source:, reader mode, addons.mozilla.org: Zen doesn't let us in.
     }
   }
-  function tellTabs(code) {
-    for (const id of rec ? rec.tabs : []) browser.tabs.executeScript(id, { code: `globalThis.__ccfoxRecorder && globalThis.__ccfoxRecorder.${code}` }).catch(() => {});
+  // Commands for content/recorder.js in each followed tab; tabs without it ignore them.
+  function tellTabs(cmd) {
+    for (const id of rec ? rec.tabs : []) browser.tabs.sendMessage(id, { ccfoxRecorder: cmd }, { frameId: 0 }).catch(() => {});
   }
   function follow(tab) {
     if (!rec || isPanel(tab.url)) return;
@@ -309,13 +310,13 @@ const Workflow = (() => {
   function pause(on) {
     if (!rec || rec.status === "review") return;
     rec.status = on ? "paused" : "recording";
-    tellTabs(`pause(${!!on})`);
+    tellTabs({ op: "pause", paused: !!on });
     changed();
   }
 
   async function stop() {
     if (!rec || rec.status === "review") return;
-    tellTabs("stop()");
+    tellTabs({ op: "stop" });
     rec.status = "review";
     const first = rec.steps.find((s) => s.url);
     if (!rec.meta.name) rec.meta.name = first ? `${siteOf(first.url) || "Page"} workflow` : "Recorded workflow";
@@ -324,7 +325,7 @@ const Workflow = (() => {
 
   function cancel() {
     if (!rec) return;
-    tellTabs("stop()");
+    tellTabs({ op: "stop" });
     rec = null;
     changed();
   }
@@ -355,7 +356,7 @@ const Workflow = (() => {
       throw new Error(reply.error || "Couldn't save the skill.");
     }
     const tidy = rec.meta.tidy;
-    tellTabs("stop()");
+    tellTabs({ op: "stop" });
     rec = null;
     changed();
     if (typeof Chat !== "undefined") Chat.refreshCatalog(true);
