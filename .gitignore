@@ -2,6 +2,6 @@ node_modules/
 dist/
 .DS_Store
 .claude/
-.impeccable/hook.cache.json
+.impeccable/
 call-*.png
 dev/zen-tab-group.png

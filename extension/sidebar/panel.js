@@ -916,7 +916,7 @@ function renderSettings() {
   for (const s of c.mcpServers || []) {
     const state = s.status === "connected" ? "" : s.status === "pending" ? "wait" : "bad";
     const chip = el("span", `chip ${state}`);
-    // "plugin:paperfetch:paperfetch" -> "paperfetch"; "claude.ai Gmail" -> "Gmail"
+    // "plugin:reading-list:library" -> "reading-list"; "claude.ai Gmail" -> "Gmail"
     const pm = s.name.match(/^plugin:([^:]+):(.+)$/);
     const name = pm ? (pm[1] === pm[2] ? pm[2] : `${pm[1]} · ${pm[2]}`) : s.name.replace(/^claude\.ai /, "");
     chip.append(el("span", "pip"), el("span", "", name));
